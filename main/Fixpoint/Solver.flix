@@ -19,55 +19,69 @@ namespace Fixpoint {
     namespace Ast {
 
         pub enum Constraint {
-            case Constraint(List[ConstraintParam], HeadPredicate, List[BodyPredicate])
+            case Constraint(List[ConstraintParam], HeadPredicate, List[BodyPredicate], SourceLocation)
         }
 
         pub enum ConstraintParam {
-            // TODO
-            case ConstraintParam(VarSym)
+            case HeadParam(VarSym, SourceLocation),
+            case RuleParam(VarSym, SourceLocation)
         }
 
         pub enum HeadPredicate {
-            // TODO
-            case Atom(PredSym, List[HeadTerm])
-        }
-
-        pub enum PredSym {
-            case PredSym(String)
-        }
-
-        pub enum HeadTerm {
-            case QuantVar(VarSym),
-            case Lit(String)
-        }
-
-        pub enum VarSym {
-            case VarSym(String)
+            case HeadAtom(PredSym, List[HeadTerm], SourceLocation)
         }
 
         pub enum BodyPredicate {
-            case Atom(PredSym, List[BodyTerm])
+            case BodyAtom(PredSym, List[BodyTerm])
+        }
+
+        pub enum HeadTerm {
+            case HeadQuantVar(VarSym, SourceLocation),
+            case HeadCapturedVar(VarSym, SourceLocation),
+            case HeadLit(String, SourceLocation)
         }
 
         pub enum BodyTerm {
-            case QuantVar(VarSym),
-            case Lit(String)
+            case BodyQuantVar(VarSym, SourceLocation),
+            case BodyCapturedVar(VarSym, SourceLocation),
+            case BodyLit(String, SourceLocation)
+        }
+
+        pub enum PredSym {
+            case PredSym(String, SourceLocation)
+        }
+
+        pub enum VarSym {
+            case VarSym(String, SourceLocation)
         }
 
         pub enum SourceLocation {
-            // TODO
+            case Unknown,
+            case SourceLocation(String, Int32, Int32) // Filename and char interval
         }
 
         pub def foo() : List[Constraint] =
-            let fact1 = Constraint(Nil, HeadPredicate.Atom(PredSym("Rich"), HeadTerm.Lit("Magnus") :: Nil), Nil);
-            let fact2 = Constraint(Nil, HeadPredicate.Atom(PredSym("Age"), HeadTerm.Lit("34") :: Nil), Nil);
-            let fact3 = Constraint(Nil, HeadPredicate.Atom(PredSym("Rich"), HeadTerm.Lit("Joakim") :: Nil), Nil);
-            let fact4 = Constraint(Nil, HeadPredicate.Atom(PredSym("Famous"), HeadTerm.Lit("Joakim") :: Nil), Nil);
-            let rule1 = Constraint(ConstraintParam(VarSym("person")) :: Nil,
-                                    HeadPredicate.Atom(PredSym("Happy"),
-                                        HeadTerm.QuantVar(VarSym("person")) :: Nil),
-                                    BodyPredicate.Atom(PredSym("Rich"), BodyTerm.QuantVar(VarSym("person")) :: Nil) ::
-                                    BodyPredicate.Atom(PredSym("Famous"), BodyTerm.QuantVar(VarSym("person")) :: Nil) :: Nil);
+            let fact1 = Constraint(Nil, HeadAtom(PredSym("Rich", Unknown),
+                                                 HeadLit("Magnus", Unknown) :: Nil, Unknown),
+                                   Nil, Unknown);
+            let fact2 = Constraint(Nil, HeadAtom(PredSym("Age", Unknown),
+                                                 HeadLit("34", Unknown) :: Nil, Unknown),
+                                   Nil, Unknown);
+            let fact3 = Constraint(Nil, HeadAtom(PredSym("Rich", Unknown),
+                                                 HeadLit("Joakim", Unknown) :: Nil, Unknown),
+                                   Nil, Unknown);
+            let fact4 = Constraint(Nil, HeadAtom(PredSym("Famous", Unknown),
+                                                 HeadLit("Joakim", Unknown) :: Nil, Unknown),
+                                   Nil, Unknown);
+            let rule1 = Constraint(HeadParam(VarSym("person", Unknown), Unknown) :: Nil,
+                                   HeadAtom(PredSym("Happy", Unknown),
+                                            HeadQuantVar(VarSym("person", Unknown), Unknown) :: Nil,
+                                            Unknown),
+                                    BodyAtom(PredSym("Rich", Unknown),
+                                             BodyQuantVar(VarSym("person", Unknown), Unknown) :: Nil) ::
+                                             BodyAtom(PredSym("Famous", Unknown),
+                                                      BodyQuantVar(VarSym("person", Unknown), Unknown) :: Nil) :: Nil,
+                                   Unknown);
             fact1 :: fact2 :: fact3 :: fact4 :: rule1 :: Nil
     }
 
