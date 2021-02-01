@@ -19,25 +19,56 @@ namespace Fixpoint {
     namespace Ast {
 
         pub enum Constraint {
-            case Constraint(List[ConstraintParam], HeadPredicate, List[BodyPredicate], SourceLocation)
+            case Constraint(List[ConstraintParam], HeadPredicate, List[BodyPredicate])
         }
 
         pub enum ConstraintParam {
             // TODO
+            case ConstraintParam(VarSym)
         }
 
         pub enum HeadPredicate {
             // TODO
+            case Atom(PredSym, List[HeadTerm])
+        }
+
+        pub enum PredSym {
+            case PredSym(String)
+        }
+
+        pub enum HeadTerm {
+            case QuantVar(VarSym),
+            case Lit(String)
+        }
+
+        pub enum VarSym {
+            case VarSym(String)
         }
 
         pub enum BodyPredicate {
-            // TODO
+            case Atom(PredSym, List[BodyTerm])
+        }
+
+        pub enum BodyTerm {
+            case QuantVar(VarSym),
+            case Lit(String)
         }
 
         pub enum SourceLocation {
             // TODO
         }
 
+        pub def foo() : List[Constraint] =
+            let fact1 = Constraint(Nil, HeadPredicate.Atom(PredSym("Rich"), HeadTerm.Lit("Magnus") :: Nil), Nil);
+            let fact2 = Constraint(Nil, HeadPredicate.Atom(PredSym("Age"), HeadTerm.Lit("34") :: Nil), Nil);
+            let fact3 = Constraint(Nil, HeadPredicate.Atom(PredSym("Rich"), HeadTerm.Lit("Joakim") :: Nil), Nil);
+            let fact4 = Constraint(Nil, HeadPredicate.Atom(PredSym("Famous"), HeadTerm.Lit("Joakim") :: Nil), Nil);
+            let rule1 = Constraint(ConstraintParam(VarSym("person")) :: Nil,
+                                    HeadPredicate.Atom(PredSym("Happy"),
+                                        HeadTerm.QuantVar(VarSym("person")) :: Nil),
+                                    BodyPredicate.Atom(PredSym("Rich"), BodyTerm.QuantVar(VarSym("person")) :: Nil) ::
+                                    BodyPredicate.Atom(PredSym("Famous"), BodyTerm.QuantVar(VarSym("person")) :: Nil) :: Nil);
+            fact1 :: fact2 :: fact3 :: fact4 :: rule1 :: Nil
     }
 
     namespace RelationalAlgebraMachine {
@@ -47,3 +78,8 @@ namespace Fixpoint {
     }
 
 }
+/// Rich("Magnus").
+/// Age(34).
+/// Rich("Joakim").
+/// Famous("Joakim").
+/// Happy(person) :- Rich(person), Famous(person).
