@@ -57,7 +57,7 @@ namespace Fixpoint {
 
         pub enum SourceLocation {
             case Unknown,
-            case SourceLocation(String, Int32, Int32) // Filename and char interval
+            case SourceLocation({name: String, beginLine: Int32, beginCol: Int32, endLine: Int32, endCol: Int32})
         }
 
         pub def isRangeRestricted(p: List[Constraint]): Bool =
