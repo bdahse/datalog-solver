@@ -60,7 +60,60 @@ namespace Fixpoint {
             case SourceLocation(String, Int32, Int32) // Filename and char interval
         }
 
+        pub def isRangeRestricted(p: List[Constraint]): Bool =
+            List.forall(rangeRestrictedHelper, p)
+
+        def rangeRestrictedHelper(c: Constraint): Bool = match c {
+            case Constraint(params, _, _, _) => headVars(params) `Set.isSubsetOf` ruleVars(params)
+        }
+
+        def headVars(params: List[ConstraintParam]): Set[VarSym] =
+            List.foldLeft((acc, p) -> match p {
+                case HeadParam(var, _) => Set.union(acc, Set#{var})
+                case _ => acc
+            }, Set#{}, params)
+
+        def ruleVars(params: List[ConstraintParam]): Set[VarSym] =
+            List.foldLeft((acc, p) -> match p {
+                case RuleParam(var, _) => Set.union(acc, Set#{var})
+                case _ => acc
+            }, Set#{}, params)
+
+        instance Order[VarSym] {
+            def less(a: VarSym, b: VarSym): Bool = match a <=> b {
+                case LessThan => true
+                case _ => false
+            }
+
+            def lessEqual(a: VarSym, b: VarSym): Bool = match a <=> b {
+                case LessThan => true
+                case EqualTo => true
+                case _ => false
+            }
+
+            def greater(a: VarSym, b: VarSym): Bool = match a <=> b {
+                case GreaterThan => true
+                case _ => false
+            }
+
+            def greaterEqual(a: VarSym, b: VarSym): Bool = match a <=> b {
+                case GreaterThan => true
+                case EqualTo => true
+                case _ => false
+            }
+
+            def compare(a: VarSym, b: VarSym): Comparison = match (a,b) {
+                case (VarSym(s1, _), VarSym(s2, _)) => s1 <=> s2
+            }
+        }
+
         pub def foo() : List[Constraint] =
+            /// Rich("Magnus").
+            /// Age(34).
+            /// Rich("Joakim").
+            /// Famous("Joakim").
+            /// Happy(person) :- Rich(person), Famous(person).
+            // TODO: Find out how to make this a testcase.
             let fact1 = Constraint(Nil, HeadAtom(PredSym("Rich", Unknown),
                                                  HeadLit("Magnus", Unknown) :: Nil, Unknown),
                                    Nil, Unknown);
@@ -92,8 +145,3 @@ namespace Fixpoint {
     }
 
 }
-/// Rich("Magnus").
-/// Age(34).
-/// Rich("Joakim").
-/// Famous("Joakim").
-/// Happy(person) :- Rich(person), Famous(person).
