@@ -104,6 +104,25 @@ namespace Fixpoint {
                 case _ => acc
             }, Set#{}, params)
 
+        pub def nonPositivelyBoundVar(cs: List[Constraint]): Bool =
+            List.forall(c -> match c {
+                case Constraint(_, _, body, _) =>
+                    let (positive, negative) = polarityVars(body);
+                    negative `Set.isSubsetOf` positive
+            }, cs)
+
+        def polarityVars(body: List[BodyPredicate]): (Set[VarSym], Set[VarSym]) =
+            List.foldLeft((acc, bp) -> match (acc, bp) {
+                case ((p, n), BodyAtom(_, Positive, terms, _)) => (Set.union(p, termVars(terms)), n)
+                case ((p, n), BodyAtom(_, Negative, terms, _)) => (p, Set.union(n, termVars(terms)))
+            }, (Set#{}, Set#{}), body)
+
+        def termVars(terms: List[BodyTerm]): Set[VarSym] =
+            List.foldLeft((acc, t) -> match t {
+                case BodyQuantVar(var, _) => Set.union(acc, Set#{var})
+                case _ => acc
+            }, Set#{}, terms)
+
         instance Order[VarSym] {
             def less(a: VarSym, b: VarSym): Bool = match a <=> b {
                 case LessThan => true
