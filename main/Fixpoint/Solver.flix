@@ -18,8 +18,8 @@ namespace Fixpoint {
 
     namespace Ast {
 
-        pub enum Constraint {
-            case Constraint(List[ConstraintParam], HeadPredicate, List[BodyPredicate], SourceLocation)
+        pub enum Constraint[v] {
+            case Constraint(List[ConstraintParam], HeadPredicate[v], List[BodyPredicate[v]], SourceLocation)
         }
 
         pub enum ConstraintParam {
@@ -27,24 +27,24 @@ namespace Fixpoint {
             case RuleParam(VarSym, SourceLocation)
         }
 
-        pub enum HeadPredicate {
-            case HeadAtom(PredSym, List[HeadTerm], SourceLocation)
+        pub enum HeadPredicate[v] {
+            case HeadAtom(PredSym, List[HeadTerm[v]], SourceLocation)
         }
 
-        pub enum BodyPredicate {
-            case BodyAtom(PredSym, Polarity, List[BodyTerm], SourceLocation)
+        pub enum BodyPredicate[v] {
+            case BodyAtom(PredSym, Polarity, List[BodyTerm[v]], SourceLocation)
         }
 
-        pub enum HeadTerm {
+        pub enum HeadTerm[v] {
             case HeadQuantVar(VarSym, SourceLocation),
             case HeadCapturedVar(VarSym, SourceLocation),
-            case HeadLit(String, SourceLocation)
+            case HeadLit(v, SourceLocation)
         }
 
-        pub enum BodyTerm {
+        pub enum BodyTerm[v] {
             case BodyQuantVar(VarSym, SourceLocation),
             case BodyCapturedVar(VarSym, SourceLocation),
-            case BodyLit(String, SourceLocation)
+            case BodyLit(v, SourceLocation)
         }
 
         pub enum Polarity {
@@ -65,19 +65,19 @@ namespace Fixpoint {
             case SourceLocation({name: String, beginLine: Int32, beginCol: Int32, endLine: Int32, endCol: Int32})
         }
 
-        pub opaque type PrecedenceGraph = Set[PrecedenceEdge]
+        pub opaque type PrecedenceGraph[v] = Set[PrecedenceEdge[v]]
 
-        pub enum PrecedenceEdge {
-            case PositiveEdge(BodyPredicate, HeadPredicate),
-            case NegativeEdge(BodyPredicate, HeadPredicate)
+        pub enum PrecedenceEdge[v] {
+            case PositiveEdge(BodyPredicate[v], HeadPredicate[v]),
+            case NegativeEdge(BodyPredicate[v], HeadPredicate[v])
         }
 
-        pub def precedence(cs: List[Constraint]): PrecedenceGraph =
+        pub def precedence(cs: List[Constraint[v]]): PrecedenceGraph[v] =
             List.foldLeft((acc, c) -> match c {
                 case Constraint(_, head, body, _) => precedenceHelper(acc, head, body)
             }, PrecedenceGraph(Set#{}), cs)
 
-        def precedenceHelper(g: PrecedenceGraph, head: HeadPredicate, body: List[BodyPredicate]): PrecedenceGraph =
+        def precedenceHelper[v](g: PrecedenceGraph[v], head: HeadPredicate[v], body: List[BodyPredicate[v]]): PrecedenceGraph[v] =
             List.foldLeft((acc, bp) -> match (acc, bp) {
                 case (PrecedenceGraph(edges), BodyAtom(_, Positive, _, _)) =>
                     PrecedenceGraph(Set.union(edges, Set#{PositiveEdge(bp, head)}))
@@ -85,10 +85,10 @@ namespace Fixpoint {
                     PrecedenceGraph(Set.union(edges, Set#{NegativeEdge(bp, head)}))
             }, g, body)
 
-        pub def isRangeRestricted(p: List[Constraint]): Bool =
+        pub def isRangeRestricted(p: List[Constraint[v]]): Bool =
             List.forall(rangeRestrictedHelper, p)
 
-        def rangeRestrictedHelper(c: Constraint): Bool = match c {
+        def rangeRestrictedHelper(c: Constraint[v]): Bool = match c {
             case Constraint(params, _, _, _) => headVars(params) `Set.isSubsetOf` ruleVars(params)
         }
 
@@ -104,20 +104,20 @@ namespace Fixpoint {
                 case _ => acc
             }, Set#{}, params)
 
-        pub def nonPositivelyBoundVar(cs: List[Constraint]): Bool =
+        pub def nonPositivelyBoundVar(cs: List[Constraint[v]]): Bool =
             List.forall(c -> match c {
                 case Constraint(_, _, body, _) =>
                     let (positive, negative) = polarityVars(body);
                     negative `Set.isSubsetOf` positive
             }, cs)
 
-        def polarityVars(body: List[BodyPredicate]): (Set[VarSym], Set[VarSym]) =
+        def polarityVars(body: List[BodyPredicate[v]]): (Set[VarSym], Set[VarSym]) =
             List.foldLeft((acc, bp) -> match (acc, bp) {
                 case ((p, n), BodyAtom(_, Positive, terms, _)) => (Set.union(p, termVars(terms)), n)
                 case ((p, n), BodyAtom(_, Negative, terms, _)) => (p, Set.union(n, termVars(terms)))
             }, (Set#{}, Set#{}), body)
 
-        def termVars(terms: List[BodyTerm]): Set[VarSym] =
+        def termVars[v](terms: List[BodyTerm[v]]): Set[VarSym] =
             List.foldLeft((acc, t) -> match t {
                 case BodyQuantVar(var, _) => Set.union(acc, Set#{var})
                 case _ => acc
@@ -181,31 +181,31 @@ namespace Fixpoint {
 
         }
 
-        instance Order[PrecedenceEdge] {
+        instance Order[PrecedenceEdge[a]] {
 
-            def less(a: PrecedenceEdge, b: PrecedenceEdge): Bool = match a <=> b {
+            def less(a: PrecedenceEdge[v], b: PrecedenceEdge[v]): Bool = match a <=> b {
                 case LessThan => true
                 case _ => false
             }
 
-            def lessEqual(a: PrecedenceEdge, b: PrecedenceEdge): Bool = match a <=> b {
+            def lessEqual(a: PrecedenceEdge[v], b: PrecedenceEdge[v]): Bool = match a <=> b {
                 case LessThan => true
                 case EqualTo => true
                 case _ => false
             }
 
-            def greater(a: PrecedenceEdge, b: PrecedenceEdge): Bool = match a <=> b {
+            def greater(a: PrecedenceEdge[v], b: PrecedenceEdge[v]): Bool = match a <=> b {
                 case GreaterThan => true
                 case _ => false
             }
 
-            def greaterEqual(a: PrecedenceEdge, b: PrecedenceEdge): Bool = match a <=> b {
+            def greaterEqual(a: PrecedenceEdge[v], b: PrecedenceEdge[v]): Bool = match a <=> b {
                 case GreaterThan => true
                 case EqualTo => true
                 case _ => false
             }
 
-            def compare(a: PrecedenceEdge, b: PrecedenceEdge): Comparison = match (a,b) {
+            def compare(a: PrecedenceEdge[v], b: PrecedenceEdge[v]): Comparison = match (a,b) {
                 case (PositiveEdge(BodyAtom(s1, _, _, _), HeadAtom(s2, _, _)),
                       PositiveEdge(BodyAtom(s3, _, _, _), HeadAtom(s4, _, _))) =>
                       let cmp = s1 <=> s3;
@@ -226,7 +226,7 @@ namespace Fixpoint {
 
         }
 
-        pub def foo() : List[Constraint] =
+        pub def foo() : List[Constraint[String]] =
             /// Rich("Magnus").
             /// Age(34).
             /// Rich("Joakim").
