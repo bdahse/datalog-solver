@@ -36,14 +36,12 @@ namespace Fixpoint {
         }
 
         pub enum HeadTerm[v] {
-            case HeadQuantVar(VarSym, SourceLocation),
-            case HeadCapturedVar(VarSym, SourceLocation),
+            case HeadVar(VarSym, SourceLocation)
             case HeadLit(v, SourceLocation)
         }
 
         pub enum BodyTerm[v] {
-            case BodyQuantVar(VarSym, SourceLocation),
-            case BodyCapturedVar(VarSym, SourceLocation),
+            case BodyVar(VarSym, SourceLocation)
             case BodyLit(v, SourceLocation)
         }
 
@@ -119,7 +117,7 @@ namespace Fixpoint {
 
         def termVars[v](terms: List[BodyTerm[v]]): Set[VarSym] =
             List.foldLeft((acc, t) -> match t {
-                case BodyQuantVar(var, _) => Set.union(acc, Set#{var})
+                case BodyVar(var, _) => Set.union(acc, Set#{var})
                 case _ => acc
             }, Set#{}, terms)
 
@@ -247,15 +245,15 @@ namespace Fixpoint {
                                    Nil, Unknown);
             let rule1 = Constraint(HeadParam(VarSym("person", Unknown), Unknown) :: Nil,
                                    HeadAtom(PredSym("Happy", Unknown),
-                                            HeadQuantVar(VarSym("person", Unknown), Unknown) :: Nil,
+                                            HeadVar(VarSym("person", Unknown), Unknown) :: Nil,
                                             Unknown),
                                    BodyAtom(PredSym("Rich", Unknown),
                                             Positive,
-                                            BodyQuantVar(VarSym("person", Unknown), Unknown) :: Nil,
+                                            BodyVar(VarSym("person", Unknown), Unknown) :: Nil,
                                             Unknown) ::
                                    BodyAtom(PredSym("Famous", Unknown),
                                             Positive,
-                                            BodyQuantVar(VarSym("person", Unknown), Unknown) :: Nil,
+                                            BodyVar(VarSym("person", Unknown), Unknown) :: Nil,
                                             Unknown) :: Nil,
                                    Unknown);
             fact1 :: fact2 :: fact3 :: fact4 :: rule1 :: Nil
