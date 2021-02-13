@@ -13,23 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace Fixpoint {
-    namespace Ast {
-        
-        pub enum HeadPredicate[v] {
-            case HeadAtom(PredSym, List[HeadTerm[v]], SourceLocation)
-        }
-
-        def headVars(head: HeadPredicate[v]): Set[VarSym] = match head {
-            case HeadAtom(_, terms, _) => htermVars(terms)
-        }
-
-        def htermVars[v](terms: List[HeadTerm[v]]): Set[VarSym] =
-            List.foldLeft((acc, t) -> match t {
-                case HeadVar(var, _) => Set.insert(var, acc)
-                case HeadApp(_, term, _) => Set.union(acc, htermVars(term :: Nil))
-                case HeadLit(_, _) => acc
-            }, Set.empty(), terms)
-
+namespace Fixpoint/Ast {
+    pub enum HeadPredicate[v] {
+        case HeadAtom(PredSym, List[HeadTerm[v]], SourceLocation)
     }
+
+    def headVars(head: HeadPredicate[v]): Set[VarSym] = match head {
+        case HeadAtom(_, terms, _) => htermVars(terms)
+    }
+
+    def htermVars[v](terms: List[HeadTerm[v]]): Set[VarSym] =
+        List.foldLeft((acc, t) -> match t {
+            case HeadVar(var, _) => Set.insert(var, acc)
+            case HeadApp(_, term, _) => Set.union(acc, htermVars(term :: Nil))
+            case HeadLit(_, _) => acc
+        }, Set.empty(), terms)
 }

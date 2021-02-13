@@ -13,29 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace Fixpoint {
-    namespace Ast {
-        
-        pub enum BodyPredicate[v] {
-            case BodyAtom(PredSym, Polarity, List[BodyTerm[v]], SourceLocation)
-        }
-
-        def bodyVars(body: List[BodyPredicate[v]]): Set[VarSym] =
-            List.foldLeft((acc, bp) -> match bp {
-                case BodyAtom(_, _, terms, _) => Set.union(acc, btermVars(terms))
-            }, Set.empty(), body)
-
-        def polarityVars(body: List[BodyPredicate[v]]): (Set[VarSym], Set[VarSym]) =
-            List.foldLeft((acc, bp) -> match (acc, bp) {
-                case ((p, n), BodyAtom(_, Positive, terms, _)) => (Set.union(p, btermVars(terms)), n)
-                case ((p, n), BodyAtom(_, Negative, terms, _)) => (p, Set.union(n, btermVars(terms)))
-            }, (Set.empty(), Set.empty()), body)
-
-        def btermVars(terms: List[BodyTerm[v]]): Set[VarSym] =
-            List.foldLeft((acc, t) -> match t {
-                case BodyVar(var, _) => Set.insert(var, acc)
-                case _ => acc
-            }, Set.empty(), terms)
-
+namespace Fixpoint/Ast {
+    pub enum BodyPredicate[v] {
+        case BodyAtom(PredSym, Polarity, List[BodyTerm[v]], SourceLocation)
     }
+
+    def bodyVars(body: List[BodyPredicate[v]]): Set[VarSym] =
+        List.foldLeft((acc, bp) -> match bp {
+            case BodyAtom(_, _, terms, _) => Set.union(acc, btermVars(terms))
+        }, Set.empty(), body)
+
+    def polarityVars(body: List[BodyPredicate[v]]): (Set[VarSym], Set[VarSym]) =
+        List.foldLeft((acc, bp) -> match (acc, bp) {
+            case ((p, n), BodyAtom(_, Positive, terms, _)) => (Set.union(p, btermVars(terms)), n)
+            case ((p, n), BodyAtom(_, Negative, terms, _)) => (p, Set.union(n, btermVars(terms)))
+        }, (Set.empty(), Set.empty()), body)
+
+    def btermVars(terms: List[BodyTerm[v]]): Set[VarSym] =
+        List.foldLeft((acc, t) -> match t {
+            case BodyVar(var, _) => Set.insert(var, acc)
+            case _ => acc
+        }, Set.empty(), terms)
 }

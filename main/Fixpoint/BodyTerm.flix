@@ -13,13 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace Fixpoint {
-    namespace Ast {
-        
-        pub enum BodyTerm[v] {
-            case BodyVar(VarSym, SourceLocation)
-            case BodyLit(v, SourceLocation)
-        }
-
+namespace Fixpoint/Ast {
+    pub enum BodyTerm[v] {
+        case BodyVar(VarSym, SourceLocation)
+        case BodyLit(v, SourceLocation)
     }
 }

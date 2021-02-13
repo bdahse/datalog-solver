@@ -13,14 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace Fixpoint {
-    namespace Ast {
-        
-        pub enum HeadTerm[v] {
-            case HeadVar(VarSym, SourceLocation)
-            case HeadLit(v, SourceLocation)
-            case HeadApp(v -> v, HeadTerm[v], SourceLocation)
-        }
-
+namespace Fixpoint/Ast {
+    pub enum HeadTerm[v] {
+        case HeadVar(VarSym, SourceLocation)
+        case HeadLit(v, SourceLocation)
+        case HeadApp(v -> v, HeadTerm[v], SourceLocation)
     }
 }

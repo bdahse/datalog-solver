@@ -13,14 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace Fixpoint {
-
-    namespace Ast {
-
-        pub enum ConstraintParam {
-            case ConstraintParam(VarSym, SourceLocation)
-        }
-
+namespace Fixpoint/Ast {
+    pub enum ConstraintParam {
+        case ConstraintParam(VarSym, SourceLocation)
     }
-
 }

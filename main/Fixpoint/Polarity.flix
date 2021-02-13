@@ -13,13 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace Fixpoint {
-    namespace Ast {
-        
-        pub enum Polarity {
-            case Positive,
-            case Negative
-        }
-
+namespace Fixpoint/Ast {
+    pub enum Polarity {
+        case Positive,
+        case Negative
     }
 }

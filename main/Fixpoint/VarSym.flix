@@ -13,39 +13,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace Fixpoint {
-    namespace Ast {
-        
-        pub enum VarSym {
-            case VarSym(String, SourceLocation)
+namespace Fixpoint/Ast {
+    pub enum VarSym {
+        case VarSym(String, SourceLocation)
+    }
+
+    instance Order[VarSym] {
+        def less(a: VarSym, b: VarSym): Bool = match a <=> b {
+            case LessThan => true
+            case _ => false
         }
 
-        instance Order[VarSym] {
-            def less(a: VarSym, b: VarSym): Bool = match a <=> b {
-                case LessThan => true
-                case _ => false
-            }
+        def lessEqual(a: VarSym, b: VarSym): Bool = match a <=> b {
+            case LessThan => true
+            case EqualTo => true
+            case _ => false
+        }
 
-            def lessEqual(a: VarSym, b: VarSym): Bool = match a <=> b {
-                case LessThan => true
-                case EqualTo => true
-                case _ => false
-            }
+        def greater(a: VarSym, b: VarSym): Bool = match a <=> b {
+            case GreaterThan => true
+            case _ => false
+        }
 
-            def greater(a: VarSym, b: VarSym): Bool = match a <=> b {
-                case GreaterThan => true
-                case _ => false
-            }
+        def greaterEqual(a: VarSym, b: VarSym): Bool = match a <=> b {
+            case GreaterThan => true
+            case EqualTo => true
+            case _ => false
+        }
 
-            def greaterEqual(a: VarSym, b: VarSym): Bool = match a <=> b {
-                case GreaterThan => true
-                case EqualTo => true
-                case _ => false
-            }
-
-            def compare(a: VarSym, b: VarSym): Comparison = match (a,b) {
-                case (VarSym(s1, _), VarSym(s2, _)) => s1 <=> s2
-            }
+        def compare(a: VarSym, b: VarSym): Comparison = match (a,b) {
+            case (VarSym(s1, _), VarSym(s2, _)) => s1 <=> s2
         }
     }
 }

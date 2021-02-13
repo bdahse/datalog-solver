@@ -13,13 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace Fixpoint {
-    namespace Ast {
-        
-        pub enum SourceLocation {
-            case Unknown,
-            case SourceLocation({name: String, beginLine: Int32, beginCol: Int32, endLine: Int32, endCol: Int32})
-        }
-
+namespace Fixpoint/Ast {
+    pub enum SourceLocation {
+        case Unknown,
+        case SourceLocation({name: String, beginLine: Int32, beginCol: Int32, endLine: Int32, endCol: Int32})
     }
 }

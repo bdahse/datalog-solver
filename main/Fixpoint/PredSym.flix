@@ -13,42 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace Fixpoint {
-    namespace Ast {
-        
-        pub enum PredSym {
-            case PredSym(String, SourceLocation)
+namespace Fixpoint/Ast {
+    pub enum PredSym {
+        case PredSym(String, SourceLocation)
+    }
+
+    instance Order[PredSym] {
+
+        def less(a: PredSym, b: PredSym): Bool = match a <=> b {
+            case LessThan => true
+            case _ => false
         }
 
-        instance Order[PredSym] {
+        def lessEqual(a: PredSym, b: PredSym): Bool = match a <=> b {
+            case LessThan => true
+            case EqualTo => true
+            case _ => false
+        }
 
-            def less(a: PredSym, b: PredSym): Bool = match a <=> b {
-                case LessThan => true
-                case _ => false
-            }
+        def greater(a: PredSym, b: PredSym): Bool = match a <=> b {
+            case GreaterThan => true
+            case _ => false
+        }
 
-            def lessEqual(a: PredSym, b: PredSym): Bool = match a <=> b {
-                case LessThan => true
-                case EqualTo => true
-                case _ => false
-            }
+        def greaterEqual(a: PredSym, b: PredSym): Bool = match a <=> b {
+            case GreaterThan => true
+            case EqualTo => true
+            case _ => false
+        }
 
-            def greater(a: PredSym, b: PredSym): Bool = match a <=> b {
-                case GreaterThan => true
-                case _ => false
-            }
-
-            def greaterEqual(a: PredSym, b: PredSym): Bool = match a <=> b {
-                case GreaterThan => true
-                case EqualTo => true
-                case _ => false
-            }
-
-            def compare(a: PredSym, b: PredSym): Comparison = match (a,b) {
-                case (PredSym(s1, _), PredSym(s2, _)) => s1 <=> s2
-            }
-
+        def compare(a: PredSym, b: PredSym): Comparison = match (a,b) {
+            case (PredSym(s1, _), PredSym(s2, _)) => s1 <=> s2
         }
 
     }
+
 }

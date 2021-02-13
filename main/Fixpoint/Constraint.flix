@@ -13,10 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-namespace Fixpoint {
-    namespace Ast {
-        pub enum Constraint[v] {
-            case Constraint(List[ConstraintParam], HeadPredicate[v], List[BodyPredicate[v]], SourceLocation)
-        }
+namespace Fixpoint/Ast {
+    pub enum Constraint[v] {
+        case Constraint(List[ConstraintParam], HeadPredicate[v], List[BodyPredicate[v]], SourceLocation)
     }
 }
