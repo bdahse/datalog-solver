@@ -175,3 +175,38 @@ namespace Fixpoint/Ast {
                                 Unknown);
         fact1 :: fact2 :: fact3 :: rule1 :: rule2 :: rule3 :: rule4 :: rule5 :: rule6 :: Nil
 }
+
+namespace Fixpoint/RAM {
+    pub enum Stmt[v] {
+        case Insert(RelOp[v])
+        case Merge(RelSym, RelSym)
+        case Swap(RelSym, RelSym)
+        case Purge(RelSym)
+        case Seq(List[Stmt[v]])
+        case While(BoolExp[v], Stmt[v])
+    }
+
+    pub enum RelOp[v] {
+        case Search(RelSym, Option[BoolExp[v]], RelOp[v])
+        case Project(List[Term[v]], RelSym)
+    }
+
+    pub enum RelSym {
+        case Full(String)
+        case Delta(String)
+        case New(String)
+    }
+
+    pub enum BoolExp[v] {
+        case Empty(RelSym)
+        case MemberOf(List[Term[v]], RelSym)
+        case Eq(Term[v], Term[v])
+        case Not(BoolExp[v])
+        case And(BoolExp[v], BoolExp[v])
+    }
+
+    pub enum Term[v] {
+        case Lit(v)
+        case Attribute(Int32, Int32)
+    }
+}
