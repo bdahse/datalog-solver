@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Magnus Madsen
+ * Copyright 2021 Benjamin Dahse
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,30 +36,30 @@ namespace Fixpoint/Ast {
         /// Happy(person) :- Rich(person), Famous(person).
         // TODO: Find out how to make this a testcase.
         let fact1 = Constraint(Nil, HeadAtom(PredSym("Rich", Unknown),
-                                                HeadLit("Magnus", Unknown) :: Nil, Unknown),
+                                             HeadTerm.Lit("Magnus", Unknown) :: Nil, Unknown),
                                 Nil, Unknown);
         let fact2 = Constraint(Nil, HeadAtom(PredSym("Age", Unknown),
-                                                HeadLit("34", Unknown) :: Nil, Unknown),
+                                             HeadTerm.Lit("34", Unknown) :: Nil, Unknown),
                                 Nil, Unknown);
         let fact3 = Constraint(Nil, HeadAtom(PredSym("Rich", Unknown),
-                                                HeadLit("Joakim", Unknown) :: Nil, Unknown),
+                                             HeadTerm.Lit("Joakim", Unknown) :: Nil, Unknown),
                                 Nil, Unknown);
         let fact4 = Constraint(Nil, HeadAtom(PredSym("Famous", Unknown),
-                                                HeadLit("Joakim", Unknown) :: Nil, Unknown),
+                                             HeadTerm.Lit("Joakim", Unknown) :: Nil, Unknown),
                                 Nil, Unknown);
         let rule1 = Constraint(ConstraintParam(VarSym("person", Unknown), Unknown) :: Nil,
-                                HeadAtom(PredSym("Happy", Unknown),
-                                        HeadVar(VarSym("person", Unknown), Unknown) :: Nil,
+                               HeadAtom(PredSym("Happy", Unknown),
+                                        HeadTerm.Var(VarSym("person", Unknown), Unknown) :: Nil,
                                         Unknown),
-                                BodyAtom(PredSym("Rich", Unknown),
+                               BodyAtom(PredSym("Rich", Unknown),
                                         Positive,
                                         BodyVar(VarSym("person", Unknown), Unknown) :: Nil,
                                         Unknown) ::
-                                BodyAtom(PredSym("Famous", Unknown),
+                               BodyAtom(PredSym("Famous", Unknown),
                                         Positive,
                                         BodyVar(VarSym("person", Unknown), Unknown) :: Nil,
                                         Unknown) :: Nil,
-                                Unknown);
+                               Unknown);
         fact1 :: fact2 :: fact3 :: fact4 :: rule1 :: Nil
 
     pub def bar() : List[Constraint[String]] =
@@ -73,22 +73,22 @@ namespace Fixpoint/Ast {
         /// Unconnected(x, y) :- Vertex(x), Vertex(y), not Path(x, y).
         /// AntiSymmetric(x, y) :- Path(x, y), not Path(y, x).
         let fact1 = Constraint(Nil, HeadAtom(PredSym("Edge", Unknown),
-                                                HeadLit("A", Unknown) ::
-                                                HeadLit("B", Unknown) :: Nil, Unknown),
+                                             HeadTerm.Lit("A", Unknown) ::
+                                             HeadTerm.Lit("B", Unknown) :: Nil, Unknown),
                                 Nil, Unknown);
         let fact2 = Constraint(Nil, HeadAtom(PredSym("Edge", Unknown),
-                                                HeadLit("B", Unknown) ::
-                                                HeadLit("C", Unknown) :: Nil, Unknown),
+                                             HeadTerm.Lit("B", Unknown) ::
+                                             HeadTerm.Lit("C", Unknown) :: Nil, Unknown),
                                 Nil, Unknown);
         let fact3 = Constraint(Nil, HeadAtom(PredSym("Edge", Unknown),
-                                                HeadLit("C", Unknown) ::
-                                                HeadLit("D", Unknown) :: Nil, Unknown),
+                                             HeadTerm.Lit("C", Unknown) ::
+                                             HeadTerm.Lit("D", Unknown) :: Nil, Unknown),
                                 Nil, Unknown);
         let rule1 = Constraint(ConstraintParam(VarSym("x", Unknown), Unknown) ::
                                 ConstraintParam(VarSym("_", Unknown), Unknown) :: Nil,
                                 HeadAtom(PredSym("Vertex", Unknown),
-                                        HeadVar(VarSym("x", Unknown), Unknown) :: Nil,
-                                        Unknown),
+                                         HeadTerm.Var(VarSym("x", Unknown), Unknown) :: Nil,
+                                         Unknown),
                                 BodyAtom(PredSym("Edge", Unknown),
                                         Positive,
                                         BodyVar(VarSym("x", Unknown), Unknown) ::
@@ -98,7 +98,7 @@ namespace Fixpoint/Ast {
         let rule2 = Constraint(ConstraintParam(VarSym("y", Unknown), Unknown) ::
                                 ConstraintParam(VarSym("_", Unknown), Unknown) :: Nil,
                                 HeadAtom(PredSym("Vertex", Unknown),
-                                        HeadVar(VarSym("y", Unknown), Unknown) :: Nil,
+                                        HeadTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
                                         Unknown),
                                 BodyAtom(PredSym("Edge", Unknown),
                                         Positive,
@@ -109,8 +109,8 @@ namespace Fixpoint/Ast {
         let rule3 = Constraint(ConstraintParam(VarSym("x", Unknown), Unknown) ::
                                 ConstraintParam(VarSym("y", Unknown), Unknown) :: Nil,
                                 HeadAtom(PredSym("Path", Unknown),
-                                        HeadVar(VarSym("x", Unknown), Unknown) ::
-                                        HeadVar(VarSym("y", Unknown), Unknown) :: Nil,
+                                        HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
+                                        HeadTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
                                         Unknown),
                                 BodyAtom(PredSym("Edge", Unknown),
                                         Positive,
@@ -122,8 +122,8 @@ namespace Fixpoint/Ast {
                                 ConstraintParam(VarSym("y", Unknown), Unknown) ::
                                 ConstraintParam(VarSym("z", Unknown), Unknown) :: Nil,
                                 HeadAtom(PredSym("Path", Unknown),
-                                        HeadVar(VarSym("x", Unknown), Unknown) ::
-                                        HeadVar(VarSym("z", Unknown), Unknown) :: Nil,
+                                        HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
+                                        HeadTerm.Var(VarSym("z", Unknown), Unknown) :: Nil,
                                         Unknown),
                                 BodyAtom(PredSym("Path", Unknown),
                                         Positive,
@@ -139,8 +139,8 @@ namespace Fixpoint/Ast {
         let rule5 = Constraint(ConstraintParam(VarSym("x", Unknown), Unknown) ::
                                 ConstraintParam(VarSym("y", Unknown), Unknown) :: Nil,
                                 HeadAtom(PredSym("Unconnected", Unknown),
-                                        HeadVar(VarSym("x", Unknown), Unknown) ::
-                                        HeadVar(VarSym("y", Unknown), Unknown) :: Nil,
+                                        HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
+                                        HeadTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
                                         Unknown),
                                 BodyAtom(PredSym("Vertex", Unknown),
                                         Positive,
@@ -159,8 +159,8 @@ namespace Fixpoint/Ast {
         let rule6 = Constraint(ConstraintParam(VarSym("x", Unknown), Unknown) ::
                                 ConstraintParam(VarSym("y", Unknown), Unknown) :: Nil,
                                 HeadAtom(PredSym("AntiSymmetric", Unknown),
-                                        HeadVar(VarSym("x", Unknown), Unknown) ::
-                                        HeadVar(VarSym("y", Unknown), Unknown) :: Nil,
+                                        HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
+                                        HeadTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
                                         Unknown),
                                 BodyAtom(PredSym("Path", Unknown),
                                         Positive,
@@ -176,7 +176,7 @@ namespace Fixpoint/Ast {
         fact1 :: fact2 :: fact3 :: rule1 :: rule2 :: rule3 :: rule4 :: rule5 :: rule6 :: Nil
 }
 
-namespace Fixpoint/RAM {
+namespace Fixpoint/Ram {
     pub enum Stmt[v] {
         case Insert(RelOp[v])
         case Merge(RelSym, RelSym)
@@ -188,7 +188,7 @@ namespace Fixpoint/RAM {
 
     pub enum RelOp[v] {
         case Search(RelSym, Option[BoolExp[v]], RelOp[v])
-        case Project(List[Term[v]], RelSym)
+        case Project(List[RamTerm[v]], RelSym)
     }
 
     pub enum RelSym {
@@ -199,14 +199,25 @@ namespace Fixpoint/RAM {
 
     pub enum BoolExp[v] {
         case Empty(RelSym)
-        case MemberOf(List[Term[v]], RelSym)
-        case Eq(Term[v], Term[v])
+        case MemberOf(List[RamTerm[v]], RelSym)
+        case Eq(RamTerm[v], RamTerm[v])
         case Not(BoolExp[v])
         case And(BoolExp[v], BoolExp[v])
     }
 
-    pub enum Term[v] {
+    pub enum RamTerm[v] {
         case Lit(v)
         case Attribute(Int32, Int32)
+    }
+
+    instance Monoid[Stmt[v]] {
+        def empty(): Stmt[v] = Stmt.Seq(Nil)
+
+        def combine(x: Stmt[v], y: Stmt[v]): Stmt[v] = match (x, y) {
+            case (Stmt.Seq(xs), Stmt.Seq(ys)) => Stmt.Seq(xs ::: ys)
+            case (x, Stmt.Seq(ys)) => Stmt.Seq(x :: ys)
+            case (Stmt.Seq(xs), y) => Stmt.Seq(xs ::: y :: Nil)
+            case _ => Stmt.Seq(x :: y :: Nil)
+        }
     }
 }
