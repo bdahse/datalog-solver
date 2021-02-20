@@ -14,18 +14,13 @@
  * limitations under the License.
  */
 
-use Fixpoint/Ast.Constraint;
-use Fixpoint/Ast.Constraint.Constraint;
-use Fixpoint/Ast.PredSym;
-use Fixpoint/Ast.PredSym.PredSym;
-use Fixpoint/Ast.HeadPredicate.HeadAtom;
-use Fixpoint/Ast.HeadTerm;
 use Fixpoint/Ram.{Stmt, RelOp, RelSym, RamTerm};
 
-namespace Fixpoint {
-    def _compile(cs: List[Constraint[v]]): Stmt[v] =
-        let facts = compileFacts(cs);
-        List.fold(facts :: Nil)
+namespace Fixpoint/Ast {
+    def _compile(cs: List[Constraint[v]], strat: Map[PredSym, Int32]): Stmt[v] =
+        let facts = cs.compileFacts();
+        let strata = cs.compileStrata(strat);
+        List.fold(facts :: strata :: Nil)
 
     def compileFacts(cs: List[Constraint[v]]): Stmt[v] =
         let toRam = term -> match term {
@@ -35,14 +30,31 @@ namespace Fixpoint {
         };
         let compile = fact -> match fact {
             case Constraint(_, HeadAtom(PredSym(sym, _), terms, _), _, _) =>
-                Stmt.Insert(RelOp.Project(List.map(toRam, terms), RelSym.Full(sym)))
+                Stmt.Insert(RelOp.Project(terms |> List.map(toRam), RelSym.Full(sym)))
         };
-        List.map(compile, cs.facts()) |> List.fold
+        cs.facts() |> List.map(compile) |> List.fold
+
+    def compileStrata(cs: List[Constraint[v]], strat: Map[PredSym, Int32]): Stmt[v] =
+        let invertMap = acc -> k -> v -> Map.insertWith(Set.union, v, Set#{k}, acc);
+        let evalRule = stratum -> rule -> ???;
+        let compile = stratum -> cs.restrict(stratum) |> List.map(evalRule(stratum)) |> List.fold;
+        strat |>
+        Map.foldWithKey(invertMap, Map#{}) |>
+        Map.map(compile) |>
+        Map.valuesOf |>
+        List.fold
+
+    def restrict(cs: List[Constraint[v]], domain: Set[PredSym]): List[Constraint[v]] =
+        let headSym = c -> match c {
+            case Constraint(_, HeadAtom(headPred, _, _), _, _) => headPred
+        };
+        let memberOf = xs -> x -> Set.memberOf(x, xs);
+        cs |> List.filter(headSym >> memberOf(domain))
 
     def facts(cs: List[Constraint[v]]): List[Constraint[v]] =
         let isFact = c -> match c {
             case Constraint(Nil, _, Nil, _) => true
             case _ => false
         };
-        List.filter(isFact, cs)
+        cs |> List.filter(isFact)
 }
