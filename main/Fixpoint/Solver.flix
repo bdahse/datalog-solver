@@ -47,7 +47,7 @@ namespace Fixpoint/Ast {
         let fact4 = Constraint(Nil, HeadAtom(PredSym("Famous", Unknown),
                                              HeadTerm.Lit("Joakim", Unknown) :: Nil, Unknown),
                                 Nil, Unknown);
-        let rule1 = Constraint(ConstraintParam(VarSym("person", Unknown), Unknown) :: Nil,
+        let rule1 = Constraint(VarSym("person", Unknown) :: Nil,
                                HeadAtom(PredSym("Happy", Unknown),
                                         HeadTerm.Var(VarSym("person", Unknown), Unknown) :: Nil,
                                         Unknown),
@@ -84,8 +84,7 @@ namespace Fixpoint/Ast {
                                              HeadTerm.Lit("C", Unknown) ::
                                              HeadTerm.Lit("D", Unknown) :: Nil, Unknown),
                                 Nil, Unknown);
-        let rule1 = Constraint(ConstraintParam(VarSym("x", Unknown), Unknown) ::
-                                ConstraintParam(VarSym("_", Unknown), Unknown) :: Nil,
+        let rule1 = Constraint(VarSym("x", Unknown) :: VarSym("_", Unknown) :: Nil,
                                 HeadAtom(PredSym("Vertex", Unknown),
                                          HeadTerm.Var(VarSym("x", Unknown), Unknown) :: Nil,
                                          Unknown),
@@ -95,8 +94,7 @@ namespace Fixpoint/Ast {
                                         BodyVar(VarSym("_", Unknown), Unknown) :: Nil,
                                         Unknown) :: Nil,
                                 Unknown);
-        let rule2 = Constraint(ConstraintParam(VarSym("y", Unknown), Unknown) ::
-                                ConstraintParam(VarSym("_", Unknown), Unknown) :: Nil,
+        let rule2 = Constraint(VarSym("y", Unknown) :: VarSym("_", Unknown) :: Nil,
                                 HeadAtom(PredSym("Vertex", Unknown),
                                         HeadTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
                                         Unknown),
@@ -106,8 +104,7 @@ namespace Fixpoint/Ast {
                                         BodyVar(VarSym("y", Unknown), Unknown) :: Nil,
                                         Unknown) :: Nil,
                                 Unknown);
-        let rule3 = Constraint(ConstraintParam(VarSym("x", Unknown), Unknown) ::
-                                ConstraintParam(VarSym("y", Unknown), Unknown) :: Nil,
+        let rule3 = Constraint(VarSym("x", Unknown) :: VarSym("y", Unknown) :: Nil,
                                 HeadAtom(PredSym("Path", Unknown),
                                         HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
                                         HeadTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
@@ -118,9 +115,7 @@ namespace Fixpoint/Ast {
                                         BodyVar(VarSym("y", Unknown), Unknown) :: Nil,
                                         Unknown) :: Nil,
                                 Unknown);
-        let rule4 = Constraint(ConstraintParam(VarSym("x", Unknown), Unknown) ::
-                                ConstraintParam(VarSym("y", Unknown), Unknown) ::
-                                ConstraintParam(VarSym("z", Unknown), Unknown) :: Nil,
+        let rule4 = Constraint(VarSym("x", Unknown) :: VarSym("y", Unknown) :: VarSym("z", Unknown) :: Nil,
                                 HeadAtom(PredSym("Path", Unknown),
                                         HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
                                         HeadTerm.Var(VarSym("z", Unknown), Unknown) :: Nil,
@@ -136,8 +131,7 @@ namespace Fixpoint/Ast {
                                         BodyVar(VarSym("z", Unknown), Unknown) :: Nil,
                                         Unknown) :: Nil,
                                 Unknown);
-        let rule5 = Constraint(ConstraintParam(VarSym("x", Unknown), Unknown) ::
-                                ConstraintParam(VarSym("y", Unknown), Unknown) :: Nil,
+        let rule5 = Constraint(VarSym("x", Unknown) :: VarSym("y", Unknown) :: Nil,
                                 HeadAtom(PredSym("Unconnected", Unknown),
                                         HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
                                         HeadTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
@@ -156,8 +150,7 @@ namespace Fixpoint/Ast {
                                         BodyVar(VarSym("y", Unknown), Unknown) :: Nil,
                                         Unknown) :: Nil,
                                 Unknown);
-        let rule6 = Constraint(ConstraintParam(VarSym("x", Unknown), Unknown) ::
-                                ConstraintParam(VarSym("y", Unknown), Unknown) :: Nil,
+        let rule6 = Constraint(VarSym("x", Unknown) :: VarSym("y", Unknown) :: Nil,
                                 HeadAtom(PredSym("AntiSymmetric", Unknown),
                                         HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
                                         HeadTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,

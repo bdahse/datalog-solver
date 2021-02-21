@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-use Fixpoint/Ram.{Stmt, RelOp, RelSym, RamTerm};
+use Fixpoint/Ram.{Stmt, RelOp, RelSym, RamTerm, BoolExp};
 
 namespace Fixpoint/Ast {
     def _compile(cs: List[Constraint[v]], strat: Map[PredSym, Int32]): Stmt[v] =
@@ -23,38 +23,82 @@ namespace Fixpoint/Ast {
         List.fold(facts :: strata :: Nil)
 
     def compileFacts(cs: List[Constraint[v]]): Stmt[v] =
-        let toRam = term -> match term {
-            case HeadTerm.Var(_, _) => ??? // Impossible
-            case HeadTerm.Lit(v, _) => RamTerm.Lit(v)
-            case HeadTerm.App(_, _, _) => ??? // TODO: how to handle this?
-        };
+        let toRam = termToRam(Map#{});
         let compile = fact -> match fact {
-            case Constraint(_, HeadAtom(PredSym(sym, _), terms, _), _, _) =>
-                Stmt.Insert(RelOp.Project(terms |> List.map(toRam), RelSym.Full(sym)))
+            case Constraint(_, HeadAtom(PredSym(headPred, _), terms, _), _, _) =>
+                Stmt.Insert(RelOp.Project(terms |> List.map(toRam), RelSym.Full(headPred)))
         };
         cs.facts() |> List.map(compile) |> List.fold
 
-    def compileStrata(cs: List[Constraint[v]], strat: Map[PredSym, Int32]): Stmt[v] =
+    def compileStrata(cs: List[Constraint[v]]): Map[PredSym, Int32] -> Stmt[v] =
         let invertMap = acc -> k -> v -> Map.insertWith(Set.union, v, Set#{k}, acc);
-        let evalRule = stratum -> rule -> ???;
-        let compile = stratum -> cs.restrict(stratum) |> List.map(evalRule(stratum)) |> List.fold;
-        strat |>
-        Map.foldWithKey(invertMap, Map#{}) |>
-        Map.map(compile) |>
-        Map.valuesOf |>
+        let unifyVars =
+            List.mapWithIndex(atom -> i -> match atom {
+                case BodyAtom(_, _, terms, _) => terms |> List.mapWithIndex(term -> j -> match term {
+                    case BodyVar(var, _) => Map.singleton(var, RamTerm.Attribute(i, j))
+                    case BodyLit(_, _) => Map#{}
+            })}) >>
+            List.flatten >>
+            List.foldLeft(Map.union, Map#{});
+        let joinTerms = env -> {
+            let toRam = term -> match term {
+                case BodyVar(var, _) => env |> Map.get(var) |> unwrap
+                case BodyLit(v, _) => RamTerm.Lit(v)
+            };
+            List.mapWithIndex(atom -> i -> match atom {
+                case BodyAtom(_, _, terms, _) =>
+                    terms |> List.mapWithIndex(term -> j -> BoolExp.Eq(term.toRam(), RamTerm.Attribute(i, j)))
+            }) >>
+            List.flatten >>
+            List.reduceLeft(lhs -> rhs -> BoolExp.And(lhs, rhs))
+        };
+        let evalRule = rule -> match rule {
+            case Constraint(_, HeadAtom(PredSym(headPred, _), headTerms, _), body, _) =>
+                let toRam = termToRam(body.unifyVars());
+                let join = joinTerms(body.unifyVars());
+                let projection = RelOp.Project(headTerms |> List.map(toRam), RelSym.Full(headPred));
+                let search =
+                    body |>
+                    List.last |>
+                    Option.map(atom -> match atom {
+                        case BodyAtom(PredSym(pred, _), _, _, _) => RelOp.Search(RelSym.Full(pred), body.join(), projection)
+                    }) |>
+                    Option.flatMap(innerSearch ->
+                        body |>
+                        List.init |>
+                        Option.flatMap(Option.foldRightM(atom -> acc -> match atom {
+                            case BodyAtom(PredSym(pred, _), _, _, _) =>
+                                Some(RelOp.Search(RelSym.Full(pred), None, acc))
+                        }, innerSearch)));
+                Stmt.Insert(projection |> Option.getWithDefault(search))
+        };
+        let compile = stratum -> cs.restrict(stratum) |> List.map(evalRule) |> List.fold;
+        Map.foldWithKey(invertMap, Map#{}) >>
+        Map.map(compile) >>
+        Map.valuesOf >>
         List.fold
 
+    def termToRam(env: Map[VarSym, RamTerm[v]], term: HeadTerm[v]): RamTerm[v] = match term {
+        case HeadTerm.Var(var, _) => env |> Map.get(var) |> unwrap
+        case HeadTerm.Lit(v, _) => RamTerm.Lit(v)
+        case HeadTerm.App(_, _, _) => ??? // TODO: How to handle this?
+    }
+
+    def unwrap(o: Option[a]): a = match o {
+        case Some(a) => a
+        case None => ???
+    }
+
     def restrict(cs: List[Constraint[v]], domain: Set[PredSym]): List[Constraint[v]] =
-        let headSym = c -> match c {
-            case Constraint(_, HeadAtom(headPred, _, _), _, _) => headPred
+        let headPred = c -> match c {
+            case Constraint(_, HeadAtom(headSym, _, _), _, _) => headSym
         };
         let memberOf = xs -> x -> Set.memberOf(x, xs);
-        cs |> List.filter(headSym >> memberOf(domain))
+        cs |> List.filter(headPred >> memberOf(domain))
 
     def facts(cs: List[Constraint[v]]): List[Constraint[v]] =
-        let isFact = c -> match c {
-            case Constraint(Nil, _, Nil, _) => true
-            case _ => false
+        let body = c -> match c {
+            case Constraint(_, _, atoms, _) => atoms
         };
-        cs |> List.filter(isFact)
+        cs |> List.filter(body >> List.isEmpty)
 }
