@@ -30,10 +30,9 @@ namespace Fixpoint/Ast {
         List.fold
 
     def evalStratum(stratum: List[Constraint[v]]): Stmt[v] =
-        let idb = idb >> Set.toList;
+        let idb = stratum |> idb |> Set.toList;
         let init = stratum |> List.map(evalRule) |> List.fold;
         let mergeDelta =
-            stratum |>
             idb |>
             List.map(pred -> match pred {
                 case PredSym(relName, _) =>
@@ -42,7 +41,6 @@ namespace Fixpoint/Ast {
             List.fold;
         let eval = stratum |> List.map(evalRuleIncr) |> List.fold;
         let mergeNew =
-            stratum |>
             idb |>
             List.map(pred -> match pred {
                 case PredSym(relName, _) =>
@@ -50,7 +48,6 @@ namespace Fixpoint/Ast {
             }) |>
             List.fold;
         let swap =
-            stratum |>
             idb |>
             List.map(pred -> match pred {
                 case PredSym(relName, _) =>
@@ -58,7 +55,6 @@ namespace Fixpoint/Ast {
             }) |>
             List.fold;
         let whileTest =
-            stratum |>
             idb |>
             List.map(pred -> match pred {
                 case PredSym(relName, _) => BoolExp.Empty(RelSym.Delta(relName))
