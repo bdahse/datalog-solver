@@ -213,4 +213,38 @@ namespace Fixpoint/Ram {
             case _ => Stmt.Seq(x :: y :: Nil)
         }
     }
+
+    instance Order[RelSym] {
+        def less(a: RelSym, b: RelSym): Bool = match a <=> b {
+            case LessThan => true
+            case _ => false
+        }
+
+        def lessEqual(a: RelSym, b: RelSym): Bool = match a <=> b {
+            case LessThan => true
+            case EqualTo => true
+            case _ => false
+        }
+
+        def greater(a: RelSym, b: RelSym): Bool = match a <=> b {
+            case GreaterThan => true
+            case _ => false
+        }
+
+        def greaterEqual(a: RelSym, b: RelSym): Bool = match a <=> b {
+            case GreaterThan => true
+            case EqualTo => true
+            case _ => false
+        }
+
+        def compare(a: RelSym, b: RelSym): Comparison = match (a,b) {
+            case (Full(s1), Full(s2))   => s1 <=> s2
+            case (Delta(s1), Delta(s2)) => s1 <=> s2
+            case (New(s1), New(s2))     => s1 <=> s2
+            case (Full(_), _) => GreaterThan
+            case (_, Full(_)) => LessThan
+            case (Delta(_), New(_)) => GreaterThan
+            case (New(_), Delta(_)) => LessThan
+        }
+    }
 }

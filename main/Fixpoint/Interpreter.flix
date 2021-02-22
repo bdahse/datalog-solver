@@ -19,12 +19,12 @@ use Fixpoint/Ram.{Stmt, RelOp, RelSym, RamTerm, BoolExp};
 namespace Fixpoint {
     type alias Database[v] = MutMap[RelSym, MutSet[List[v]]]
 
-    pub def interpret[v: Order](stmt: Stmt[v]): Map[String, Set[List[v]]] & Impure =
+    pub def interpret[v : Order : Eq](stmt: Stmt[v]): Map[String, Set[List[v]]] & Impure =
         let db = MutMap.empty();
         db.evalStmt(stmt);
         ???
 
-    def evalStmt[v: Order](db: Database[v], stmt: Stmt[v]): Unit & Impure =
+    def evalStmt[v : Order : Eq](db: Database[v], stmt: Stmt[v]): Unit & Impure =
         let eval = evalStmt(db);
         match stmt {
             case Stmt.Insert(relOp) => db.evalOp(relOp)
@@ -44,7 +44,7 @@ namespace Fixpoint {
                 }
         }
 
-    def evalOp(db: Database[v], op: RelOp[v]): Unit & Impure =
+    def evalOp[v : Order](db: Database[v], op: RelOp[v]): Unit & Impure =
         let eval = evalOp(db);
         match op {
             case RelOp.Search(relName, searchCond, body) => ???
@@ -54,7 +54,7 @@ namespace Fixpoint {
                 MutSet.add!(tuple |> List.map(evalTerm(db)))
         }
 
-    def evalBoolExp[v: Eq](db: Database[v], exp: BoolExp[v]): Bool & Impure =
+    def evalBoolExp[v : Eq : Order](db: Database[v], exp: BoolExp[v]): Bool & Impure =
         let eval = evalBoolExp(db);
         match exp {
             case BoolExp.Empty(relSym) =>
