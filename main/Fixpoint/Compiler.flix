@@ -18,54 +18,50 @@ use Fixpoint/Ram.{Stmt, RelOp, RelSym, RamTerm, BoolExp};
 
 namespace Fixpoint/Ast {
     pub def compile(cs: List[Constraint[v]], strat: Map[PredSym, Int32]): Stmt[v] =
-        let facts = cs.facts() |> List.map(evalRule) |> List.fold;
-        let strata = cs.evalStrata(strat);
+        let invertMap = acc -> k -> v -> acc |> Map.insertWith(Set.union, v, Set#{k});
+        let facts = cs |> facts |> List.map(compileRule) |> List.fold;
+        let strata =
+            strat |>
+            Map.foldWithKey(invertMap, Map#{}) |>
+            Map.map(restrict(cs) >> compileStratum) |>
+            Map.valuesOf |>
+            List.fold;
         List.fold(facts :: strata :: Nil)
 
-    def evalStrata(cs: List[Constraint[v]]): Map[PredSym, Int32] -> Stmt[v] =
-        let invertMap = acc -> k -> v -> acc |> Map.insertWith(Set.union, v, Set#{k});
-        Map.foldWithKey(invertMap, Map#{}) >>
-        Map.map(restrict(cs) >> evalStratum) >>
-        Map.valuesOf >>
-        List.fold
-
-    def evalStratum(stratum: List[Constraint[v]]): Stmt[v] =
+    def compileStratum(stratum: List[Constraint[v]]): Stmt[v] =
         let idb = stratum |> idb |> Set.toList;
-        let init = stratum |> List.map(evalRule) |> List.fold;
+        let init = stratum |> List.map(compileRule) |> List.fold;
         let mergeDelta =
             idb |>
-            List.map(pred -> match pred {
-                case PredSym(relName, _) =>
-                    Stmt.Merge(RelSym.Full(relName), RelSym.Delta(relName))
-            }) |>
+            List.map(match PredSym(relName, _) ->
+                Stmt.Merge(RelSym.Full(relName), RelSym.Delta(relName))
+            ) |>
             List.fold;
-        let eval = stratum |> List.map(evalRuleIncr) |> List.fold;
+        let eval = stratum |> List.map(compileRuleIncr) |> List.fold;
         let mergeNew =
             idb |>
-            List.map(pred -> match pred {
-                case PredSym(relName, _) =>
-                    Stmt.Merge(RelSym.New(relName), RelSym.Full(relName))
-            }) |>
+            List.map(match PredSym(relName, _) ->
+                Stmt.Merge(RelSym.New(relName), RelSym.Full(relName))
+            ) |>
             List.fold;
         let swap =
             idb |>
-            List.map(pred -> match pred {
-                case PredSym(relName, _) =>
-                    Stmt.Swap(RelSym.New(relName), RelSym.Delta(relName))
-            }) |>
+            List.map(match PredSym(relName, _) ->
+                Stmt.Swap(RelSym.New(relName), RelSym.Delta(relName))
+            ) |>
             List.fold;
         let whileTest =
             idb |>
-            List.map(pred -> match pred {
-                case PredSym(relName, _) => BoolExp.Empty(RelSym.Delta(relName))
-            }) |>
+            List.map(match PredSym(relName, _) ->
+                BoolExp.Empty(RelSym.Delta(relName))
+            ) |>
             List.reduceLeft(lhs -> rhs -> BoolExp.And(lhs, rhs)) |>
             Option.map(BoolExp.Not);
         let whileBody = List.fold(eval :: mergeNew :: swap :: Nil);
-        let fixpoint = Stmt.While(whileTest.unwrap(), whileBody);
+        let fixpoint = Stmt.While(whileTest |> unwrap, whileBody);
         List.fold(init :: mergeDelta :: fixpoint :: Nil)
 
-    def evalRule(rule: Constraint[v]): Stmt[v] = match rule {
+    def compileRule(rule: Constraint[v]): Stmt[v] = match rule {
         case Constraint(_, HeadAtom(PredSym(headPred, _), headTerms, _), body, _) =>
             let toRam = body |> unifyVars |> headToRam;
             let join  = body |> unifyVars |> joinTerms;
@@ -73,20 +69,19 @@ namespace Fixpoint/Ast {
             let search =
                 body |>
                 List.last |>
-                Option.map(atom -> match atom {
-                    case BodyAtom(PredSym(pred, _), _, _, _) => RelOp.Search(RelSym.Full(pred), body.join(), projection)
-                }) |>
+                Option.map(match BodyAtom(PredSym(pred, _), _, _, _) ->
+                    RelOp.Search(RelSym.Full(pred), body.join(), projection)
+                ) |>
                 Option.flatMap(innerSearch ->
                     body |>
                     List.init |>
-                    Option.flatMap(Option.foldRightM(atom -> acc -> match atom {
-                        case BodyAtom(PredSym(pred, _), _, _, _) =>
-                            Some(RelOp.Search(RelSym.Full(pred), None, acc))
+                    Option.flatMap(Option.foldRightM(match BodyAtom(PredSym(pred, _), _, _, _) -> acc -> {
+                        Some(RelOp.Search(RelSym.Full(pred), None, acc))
                     }, innerSearch)));
             Stmt.Insert(projection |> Option.getWithDefault(search))
     }
 
-    def evalRuleIncr(rule: Constraint[v]): Stmt[v] = match rule {
+    def compileRuleIncr(rule: Constraint[v]): Stmt[v] = match rule {
         case Constraint(_, HeadAtom(PredSym(headPred, _), headTerms, _), body, _) => ???
     }
 
@@ -103,21 +98,22 @@ namespace Fixpoint/Ast {
 
     def unifyVars(body: List[BodyPredicate[v]]): Map[VarSym, RamTerm[v]] =
         body |>
-        List.mapWithIndex(atom -> i -> match atom {
-            case BodyAtom(_, _, terms, _) => terms |> List.mapWithIndex(term -> j -> match term {
+        List.mapWithIndex(match BodyAtom(_, _, terms, _) -> i ->
+            terms |>
+            List.mapWithIndex(term -> j -> match term {
                 case BodyVar(var, _) => Map.singleton(var, RamTerm.Attribute(i, j))
                 case BodyLit(_, _) => Map#{}
-        })}) |>
+            })
+        ) |>
         List.flatten |>
         List.foldLeft(Map.union, Map#{})
 
     def joinTerms(env: Map[VarSym, RamTerm[v]]): List[BodyPredicate[v]] -> Option[BoolExp[v]] =
         let toRam = bodyToRam(env);
-        List.mapWithIndex(atom -> i -> match atom {
-            case BodyAtom(_, _, terms, _) =>
-                terms |>
-                List.mapWithIndex(term -> j -> BoolExp.Eq(term.toRam(), RamTerm.Attribute(i, j)))
-        }) >>
+        List.mapWithIndex(match BodyAtom(_, _, terms, _) -> i ->
+            terms |>
+            List.mapWithIndex(term -> j -> BoolExp.Eq(term.toRam(), RamTerm.Attribute(i, j)))
+        ) >>
         List.flatten >>
         List.reduceLeft(lhs -> rhs -> BoolExp.And(lhs, rhs))
 
@@ -127,9 +123,7 @@ namespace Fixpoint/Ast {
     }
 
     def restrict(cs: List[Constraint[v]], domain: Set[PredSym]): List[Constraint[v]] =
-        let headPred = c -> match c {
-            case Constraint(_, HeadAtom(headSym, _, _), _, _) => headSym
-        };
+        let headPred = match Constraint(_, HeadAtom(headSym, _, _), _, _) -> headSym;
         let memberOf = xs -> x -> Set.memberOf(x, xs);
         cs |> List.filter(headPred >> memberOf(domain))
 
@@ -141,8 +135,6 @@ namespace Fixpoint/Ast {
         cs |> List.foldLeft(headPred, Set#{})
 
     def facts(cs: List[Constraint[v]]): List[Constraint[v]] =
-        let body = c -> match c {
-            case Constraint(_, _, atoms, _) => atoms
-        };
+        let body = match Constraint(_, _, atoms, _) -> atoms;
         cs |> List.filter(body >> List.isEmpty)
 }
