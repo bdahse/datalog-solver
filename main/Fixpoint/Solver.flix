@@ -200,7 +200,11 @@ namespace Fixpoint/Ram {
 
     pub enum RamTerm[v] {
         case Lit(v)
-        case Attribute(Int32, Int32)
+        case Attribute(RowVar, Int32)
+    }
+
+    pub enum RowVar {
+        case Named(String)
     }
 
     instance Monoid[Stmt[v]] {

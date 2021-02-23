@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-use Fixpoint/Ram.{Stmt, RelOp, RelSym, RamTerm, BoolExp};
+use Fixpoint/Ram.{Stmt, RelOp, RelSym, RamTerm, BoolExp, RowVar};
 
 namespace Fixpoint/Ast {
     pub def compile(cs: List[Constraint[v]], strat: Map[PredSym, Int32]): Stmt[v] =
@@ -91,30 +91,36 @@ namespace Fixpoint/Ast {
         case HeadTerm.App(_, _, _) => ??? // TODO: How to handle this?
     }
 
-    def bodyToRam(env: Map[VarSym, RamTerm[v]], term: BodyTerm[v]): RamTerm[v] = match term {
+    def compileBodyTerm(env: Map[VarSym, RamTerm[v]], term: BodyTerm[v]): RamTerm[v] = match term {
         case BodyVar(var, _) => env |> Map.get(var) |> unwrap
         case BodyLit(v, _) => RamTerm.Lit(v)
     }
 
+    def rowVars(body: List[BodyPredicate[v]]): List[RowVar] =
+        List.mapWithIndex(match BodyAtom(PredSym(pred, _), _, _, _) -> i -> {
+            RowVar.Named(pred + "$" + ToString.toString(i))
+        }, body)
+
     def unifyVars(body: List[BodyPredicate[v]]): Map[VarSym, RamTerm[v]] =
         body |>
-        List.mapWithIndex(match BodyAtom(_, _, terms, _) -> i ->
+        rowVars |>
+        List.flatMap2(match BodyAtom(_, _, terms, _) -> rowVar -> {
             terms |>
             List.mapWithIndex(term -> j -> match term {
-                case BodyVar(var, _) => Map.singleton(var, RamTerm.Attribute(i, j))
+                case BodyVar(var, _) => Map.singleton(var, RamTerm.Attribute(rowVar, j))
                 case BodyLit(_, _) => Map#{}
             })
-        ) |>
-        List.flatten |>
+        }, body) |>
         List.foldLeft(Map.union, Map#{})
 
-    def joinTerms(env: Map[VarSym, RamTerm[v]]): List[BodyPredicate[v]] -> Option[BoolExp[v]] =
-        let toRam = bodyToRam(env);
-        List.mapWithIndex(match BodyAtom(_, _, terms, _) -> i ->
+    def joinTerms(env: Map[VarSym, RamTerm[v]], body: List[BodyPredicate[v]]): Option[BoolExp[v]] =
+        body |>
+        rowVars |>
+        List.flatMap2(match BodyAtom(_, _, terms, _) -> rowVar -> {
             terms |>
-            List.mapWithIndex(term -> j -> BoolExp.Eq(term.toRam(), RamTerm.Attribute(i, j)))
-        ) >>
-        List.flatten >>
+            List.mapWithIndex(term -> j ->
+                BoolExp.Eq(compileBodyTerm(env, term), RamTerm.Attribute(rowVar, j)))
+        }, body) |>
         List.reduceLeft(lhs -> rhs -> BoolExp.And(lhs, rhs))
 
     def unwrap(o: Option[a]): a = match o {
