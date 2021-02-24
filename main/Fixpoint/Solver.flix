@@ -173,14 +173,14 @@ namespace Fixpoint/Ram {
     pub enum Stmt[v] {
         case Insert(RelOp[v])
         case Merge(RelSym, RelSym)
-        case Swap(RelSym, RelSym)
+        case Assign(RelSym, RelSym)
         case Purge(RelSym)
         case Seq(List[Stmt[v]])
         case While(BoolExp[v], Stmt[v])
     }
 
     pub enum RelOp[v] {
-        case Search(RelSym, Option[BoolExp[v]], RelOp[v])
+        case Search(RowVar, RelSym, Option[BoolExp[v]], RelOp[v])
         case Project(List[RamTerm[v]], RelSym)
     }
 
@@ -218,6 +218,34 @@ namespace Fixpoint/Ram {
         }
     }
 
+    instance Order[RowVar] {
+        def less(a: RowVar, b: RowVar): Bool = match a <=> b {
+            case LessThan => true
+            case _ => false
+        }
+
+        def lessEqual(a: RowVar, b: RowVar): Bool = match a <=> b {
+            case LessThan => true
+            case EqualTo => true
+            case _ => false
+        }
+
+        def greater(a: RowVar, b: RowVar): Bool = match a <=> b {
+            case GreaterThan => true
+            case _ => false
+        }
+
+        def greaterEqual(a: RowVar, b: RowVar): Bool = match a <=> b {
+            case GreaterThan => true
+            case EqualTo => true
+            case _ => false
+        }
+
+        def compare(a: RowVar, b: RowVar): Comparison = match (a, b) {
+            case (Named(s1), Named(s2)) => s1 <=> s2
+        }
+    }
+
     instance Order[RelSym] {
         def less(a: RelSym, b: RelSym): Bool = match a <=> b {
             case LessThan => true
@@ -241,7 +269,7 @@ namespace Fixpoint/Ram {
             case _ => false
         }
 
-        def compare(a: RelSym, b: RelSym): Comparison = match (a,b) {
+        def compare(a: RelSym, b: RelSym): Comparison = match (a, b) {
             case (Full(s1), Full(s2))   => s1 <=> s2
             case (Delta(s1), Delta(s2)) => s1 <=> s2
             case (New(s1), New(s2))     => s1 <=> s2

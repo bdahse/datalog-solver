@@ -43,10 +43,10 @@ namespace Fixpoint/Ast {
                 Stmt.Merge(RelSym.New(relName), RelSym.Full(relName))
             ) |>
             List.fold;
-        let swap =
+        let assign =
             idb |>
             List.map(match PredSym(relName, _) ->
-                Stmt.Swap(RelSym.New(relName), RelSym.Delta(relName))
+                Stmt.Assign(RelSym.Delta(relName), RelSym.New(relName))
             ) |>
             List.fold;
         let whileTest =
@@ -56,7 +56,7 @@ namespace Fixpoint/Ast {
             ) |>
             List.reduceLeft(lhs -> rhs -> BoolExp.And(lhs, rhs)) |>
             Option.map(BoolExp.Not);
-        let whileBody = List.fold(eval :: mergeNew :: swap :: Nil);
+        let whileBody = List.fold(eval :: mergeNew :: assign :: Nil);
         let fixpoint = Stmt.While(whileTest |> unwrap, whileBody);
         List.fold(init :: mergeDelta :: fixpoint :: Nil)
 
@@ -68,15 +68,17 @@ namespace Fixpoint/Ast {
             let projection = RelOp.Project(ramTerms, RelSym.Full(headPred));
             let search =
                 body |>
+                List.zip(rowVars(body)) |>
                 List.last |>
-                Option.map(match BodyAtom(PredSym(pred, _), _, _, _) ->
-                    RelOp.Search(RelSym.Full(pred), join, projection)
+                Option.map(match (rowVar, BodyAtom(PredSym(pred, _), _, _, _)) ->
+                    RelOp.Search(rowVar, RelSym.Full(pred), join, projection)
                 ) |>
                 Option.flatMap(innerSearch ->
                     body |>
+                    List.zip(rowVars(body)) |>
                     List.init |>
-                    Option.flatMap(Option.foldRightM(match BodyAtom(PredSym(pred, _), _, _, _) -> acc -> {
-                        Some(RelOp.Search(RelSym.Full(pred), None, acc))
+                    Option.flatMap(Option.foldRightM(match (rowVar, BodyAtom(PredSym(pred, _), _, _, _)) -> acc -> {
+                        Some(RelOp.Search(rowVar, RelSym.Full(pred), None, acc))
                     }, innerSearch)));
             Stmt.Insert(projection |> Option.getWithDefault(search))
     }
@@ -95,27 +97,30 @@ namespace Fixpoint/Ast {
                                     BoolExp.Not(BoolExp.MemberOf(ramTerms, RelSym.Full(headPred)))));
                 let search =
                     body |>
-                    List.mapWithIndex(atom -> i -> (atom, i)) |>
+                    List.zip(rowVars(body)) |>
+                    List.mapWithIndex(match (rowVar, atom) -> i -> (atom, i, rowVar)) |>
                     List.last |>
-                    Option.map(match (BodyAtom(PredSym(pred, _), _, _, _), i) ->
+                    Option.map(match (BodyAtom(PredSym(pred, _), _, _, _), i, rowVar) ->
                         let relSym = if (i == delta) {
                             RelSym.Delta(pred)
                         } else {
                             RelSym.Full(pred)
                         };
-                        RelOp.Search(relSym, searchCond, projection)
+                        RelOp.Search(rowVar, relSym, searchCond, projection)
                     ) |>
                     Option.flatMap(innerSearch ->
                         body |>
-                        List.mapWithIndex(atom -> i -> (atom, i)) |>
+                        List.zip(rowVars(body)) |>
+                        List.mapWithIndex(match (rowVar, atom) -> i -> (atom, i, rowVar)) |>
                         List.init |>
-                        Option.flatMap(Option.foldRightM(match (BodyAtom(PredSym(pred, _), _, _, _), i) -> acc -> {
-                            let relSym = if (i == delta) {
-                                RelSym.Delta(pred)
-                            } else {
-                                RelSym.Full(pred)
-                            };
-                            Some(RelOp.Search(relSym, None, acc))
+                        Option.flatMap(Option.foldRightM(match (atom, i, rowVar) -> acc -> match atom {
+                            case BodyAtom(PredSym(pred, _), _, _, _) =>
+                                let relSym = if (i == delta) {
+                                    RelSym.Delta(pred)
+                                } else {
+                                    RelSym.Full(pred)
+                                };
+                                Some(RelOp.Search(rowVar, relSym, None, acc))
                         }, innerSearch)));
                 Stmt.Insert(unwrap(search))
         };
