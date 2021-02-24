@@ -63,14 +63,15 @@ namespace Fixpoint/Ast {
 
     def compileRule(rule: Constraint[v]): Stmt[v] = match rule {
         case Constraint(_, HeadAtom(PredSym(headPred, _), headTerms, _), body, _) =>
-            let toRam = body |> unifyVars |> headToRam;
-            let join  = body |> unifyVars |> joinTerms;
-            let projection = RelOp.Project(headTerms |> List.map(toRam), RelSym.Full(headPred));
+            let env = unifyVars(body);
+            let join  = joinTerms(env, body);
+            let ramTerms = List.map(compileHeadTerm(env), headTerms);
+            let projection = RelOp.Project(ramTerms, RelSym.Full(headPred));
             let search =
                 body |>
                 List.last |>
                 Option.map(match BodyAtom(PredSym(pred, _), _, _, _) ->
-                    RelOp.Search(RelSym.Full(pred), body.join(), projection)
+                    RelOp.Search(RelSym.Full(pred), join, projection)
                 ) |>
                 Option.flatMap(innerSearch ->
                     body |>
@@ -81,11 +82,50 @@ namespace Fixpoint/Ast {
             Stmt.Insert(projection |> Option.getWithDefault(search))
     }
 
-    def compileRuleIncr(rule: Constraint[v]): Stmt[v] = match rule {
-        case Constraint(_, HeadAtom(PredSym(headPred, _), headTerms, _), body, _) => ???
-    }
+    def compileRuleIncr(rule: Constraint[v]): Stmt[v] =
+        let compile = delta -> match rule {
+            case Constraint(_, HeadAtom(PredSym(headPred, _), headTerms, _), body, _) =>
+                let env = unifyVars(body);
+                let join = joinTerms(env, body);
+                let ramTerms = List.map(compileHeadTerm(env), headTerms);
+                let projection = RelOp.Project(ramTerms, RelSym.New(headPred));
+                let searchCond =
+                    join |>
+                    Option.map(cond ->
+                        BoolExp.And(cond,
+                                    BoolExp.Not(BoolExp.MemberOf(ramTerms, RelSym.Full(headPred)))));
+                let search =
+                    body |>
+                    List.mapWithIndex(atom -> i -> (atom, i)) |>
+                    List.last |>
+                    Option.map(match (BodyAtom(PredSym(pred, _), _, _, _), i) ->
+                        let relSym = if (i == delta) {
+                            RelSym.Delta(pred)
+                        } else {
+                            RelSym.Full(pred)
+                        };
+                        RelOp.Search(relSym, searchCond, projection)
+                    ) |>
+                    Option.flatMap(innerSearch ->
+                        body |>
+                        List.mapWithIndex(atom -> i -> (atom, i)) |>
+                        List.init |>
+                        Option.flatMap(Option.foldRightM(match (BodyAtom(PredSym(pred, _), _, _, _), i) -> acc -> {
+                            let relSym = if (i == delta) {
+                                RelSym.Delta(pred)
+                            } else {
+                                RelSym.Full(pred)
+                            };
+                            Some(RelOp.Search(relSym, None, acc))
+                        }, innerSearch)));
+                Stmt.Insert(unwrap(search))
+        };
+        match rule {
+            case Constraint(_, _, body, _) =>
+                body |> List.mapWithIndex(_ -> i -> compile(i)) |> List.fold
+        }
 
-    def headToRam(env: Map[VarSym, RamTerm[v]], term: HeadTerm[v]): RamTerm[v] = match term {
+    def compileHeadTerm(env: Map[VarSym, RamTerm[v]], term: HeadTerm[v]): RamTerm[v] = match term {
         case HeadTerm.Var(var, _) => env |> Map.get(var) |> unwrap
         case HeadTerm.Lit(v, _) => RamTerm.Lit(v)
         case HeadTerm.App(_, _, _) => ??? // TODO: How to handle this?
