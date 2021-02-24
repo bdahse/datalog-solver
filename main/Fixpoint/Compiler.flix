@@ -18,11 +18,10 @@ use Fixpoint/Ram.{Stmt, RelOp, RelSym, RamTerm, BoolExp, RowVar};
 
 namespace Fixpoint/Ast {
     pub def compile(cs: List[Constraint[v]], strat: Map[PredSym, Int32]): Stmt[v] =
-        let invertMap = acc -> k -> v -> acc |> Map.insertWith(Set.union, v, Set#{k});
         let facts = cs |> facts |> List.map(compileRule) |> List.fold;
         let strata =
             strat |>
-            Map.foldWithKey(invertMap, Map#{}) |>
+            Map.invert |>
             Map.map(restrict(cs) >> compileStratum) |>
             Map.valuesOf |>
             List.fold;
