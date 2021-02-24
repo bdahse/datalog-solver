@@ -70,15 +70,19 @@ namespace Fixpoint/Ast {
                 body |>
                 List.zip(rowVars(body)) |>
                 List.last |>
-                Option.map(match (rowVar, BodyAtom(PredSym(pred, _), _, _, _)) ->
-                    RelOp.Search(rowVar, RelSym.Full(pred), join, projection)
-                ) |>
+                Option.flatMap(match (rowVar, atom) -> match atom {
+                    case BodyAtom(PredSym(pred, _), Positive, _, _) =>
+                        Some(RelOp.Search(rowVar, RelSym.Full(pred), join, projection))
+                    case BodyAtom(_, Negative, _, _) => None
+                }) |>
                 Option.flatMap(innerSearch ->
                     body |>
                     List.zip(rowVars(body)) |>
                     List.init |>
-                    Option.flatMap(Option.foldRightM(match (rowVar, BodyAtom(PredSym(pred, _), _, _, _)) -> acc -> {
-                        Some(RelOp.Search(rowVar, RelSym.Full(pred), None, acc))
+                    Option.map(List.foldRight(match (rowVar, atom) -> acc -> match atom {
+                        case BodyAtom(PredSym(pred, _), Positive, _, _) =>
+                            RelOp.Search(rowVar, RelSym.Full(pred), None, acc)
+                        case BodyAtom(_, Negative, _, _) => acc
                     }, innerSearch)));
             Stmt.Insert(projection |> Option.getWithDefault(search))
     }
@@ -100,27 +104,30 @@ namespace Fixpoint/Ast {
                     List.zip(rowVars(body)) |>
                     List.mapWithIndex(match (rowVar, atom) -> i -> (atom, i, rowVar)) |>
                     List.last |>
-                    Option.map(match (BodyAtom(PredSym(pred, _), _, _, _), i, rowVar) ->
-                        let relSym = if (i == delta) {
-                            RelSym.Delta(pred)
-                        } else {
-                            RelSym.Full(pred)
-                        };
-                        RelOp.Search(rowVar, relSym, searchCond, projection)
-                    ) |>
+                    Option.flatMap(match (atom, i, rowVar) -> match atom {
+                        case BodyAtom(PredSym(pred, _), Positive, _, _) =>
+                            let relSym = if (i == delta) {
+                                RelSym.Delta(pred)
+                            } else {
+                                RelSym.Full(pred)
+                            };
+                            Some(RelOp.Search(rowVar, relSym, searchCond, projection))
+                        case BodyAtom(_, Negative, _, _) => None
+                    }) |>
                     Option.flatMap(innerSearch ->
                         body |>
                         List.zip(rowVars(body)) |>
                         List.mapWithIndex(match (rowVar, atom) -> i -> (atom, i, rowVar)) |>
                         List.init |>
-                        Option.flatMap(Option.foldRightM(match (atom, i, rowVar) -> acc -> match atom {
-                            case BodyAtom(PredSym(pred, _), _, _, _) =>
+                        Option.map(List.foldRight(match (atom, i, rowVar) -> acc -> match atom {
+                            case BodyAtom(PredSym(pred, _), Positive, _, _) =>
                                 let relSym = if (i == delta) {
                                     RelSym.Delta(pred)
                                 } else {
                                     RelSym.Full(pred)
                                 };
-                                Some(RelOp.Search(rowVar, relSym, None, acc))
+                                RelOp.Search(rowVar, relSym, None, acc)
+                            case BodyAtom(_, Negative, _, _) => acc
                         }, innerSearch)));
                 Stmt.Insert(unwrap(search))
         };
@@ -145,25 +152,35 @@ namespace Fixpoint/Ast {
             RowVar.Named(pred + "$" + ToString.toString(i))
         }, body)
 
+    /// Unifies each variable that occurs in a rule body with an attribute
+    /// corresponding to a positive atom where the variable is a term.
     def unifyVars(body: List[BodyPredicate[v]]): Map[VarSym, RamTerm[v]] =
         body |>
         rowVars |>
-        List.flatMap2(match BodyAtom(_, _, terms, _) -> rowVar -> {
-            terms |>
-            List.mapWithIndex(term -> j -> match term {
-                case BodyVar(var, _) => Map.singleton(var, RamTerm.Attribute(rowVar, j))
-                case BodyLit(_, _) => Map#{}
-            })
+        List.flatMap2(atom -> rowVar -> match atom {
+            case BodyAtom(_, Positive, terms, _) =>
+                List.mapWithIndex(term -> j -> match term {
+                    case BodyVar(var, _) => Map.singleton(var, RamTerm.Attribute(rowVar, j))
+                    case BodyLit(_, _) => Map#{}
+                }, terms)
+            case BodyAtom(_, Negative, _, _) => Map#{} :: Nil
         }, body) |>
         List.foldLeft(Map.union, Map#{})
 
+    /// Equates every term in a positive body atom with an attribute
+    /// and declares that terms in negative body atoms are not in the corresponding relations.
     def joinTerms(env: Map[VarSym, RamTerm[v]], body: List[BodyPredicate[v]]): Option[BoolExp[v]] =
         body |>
         rowVars |>
-        List.flatMap2(match BodyAtom(_, _, terms, _) -> rowVar -> {
-            terms |>
-            List.mapWithIndex(term -> j ->
-                BoolExp.Eq(compileBodyTerm(env, term), RamTerm.Attribute(rowVar, j)))
+        List.flatMap2(atom -> rowVar -> match atom {
+            case BodyAtom(_, Positive, terms, _) =>
+                List.mapWithIndex(term -> j -> {
+                    let ramTerm = compileBodyTerm(env, term);
+                    BoolExp.Eq(ramTerm, RamTerm.Attribute(rowVar, j))
+                }, terms)
+            case BodyAtom(PredSym(relName, _), Negative, terms, _) =>
+                let ramTerms = List.map(compileBodyTerm(env), terms);
+                BoolExp.Not(BoolExp.MemberOf(ramTerms, RelSym.Full(relName))) :: Nil
         }, body) |>
         List.reduceLeft(lhs -> rhs -> BoolExp.And(lhs, rhs))
 
