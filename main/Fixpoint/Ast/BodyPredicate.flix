@@ -30,7 +30,7 @@ namespace Fixpoint/Ast {
 
     def btermVars(terms: List[BodyTerm[v]]): Set[VarSym] =
         List.foldLeft((acc, t) -> match t {
-            case BodyVar(var, _) => Set.insert(var, acc)
+            case BodyTerm.Var(var, _) => Set.insert(var, acc)
             case _ => acc
         }, Set.empty(), terms)
 }

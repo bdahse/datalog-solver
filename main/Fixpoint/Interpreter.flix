@@ -14,30 +14,30 @@
  * limitations under the License.
  */
 
-use Fixpoint/Ram.{Stmt, RelOp, RelSym, RamTerm, BoolExp, RowVar};
+use Fixpoint/Ram.{RamStmt, RelOp, RelSym, RamTerm, BoolExp, RowVar};
 
 namespace Fixpoint {
     type alias Tuple[v] = List[v]
     type alias Database[v] = MutMap[RelSym, MutSet[Tuple[v]]]
     type alias SearchEnv[v] = Map[RowVar, Tuple[v]]
 
-    pub def interpret[v : Order : Eq](stmt: Stmt[v]): Map[String, Set[List[v]]] & Impure =
+    pub def interpret[v : Order : Eq](stmt: RamStmt[v]): Map[String, Set[List[v]]] & Impure =
         let db = MutMap.empty();
-        db.evalStmt(stmt);
+        evalStmt(db, stmt);
         ???
 
-    def evalStmt[v : Order : Eq](db: Database[v], stmt: Stmt[v]): Unit & Impure = match stmt {
-        case Stmt.Insert(relOp) => evalOp(db, Map#{}, relOp)
-        case Stmt.Merge(src, dst) =>
+    def evalStmt[v : Order : Eq](db: Database[v], stmt: RamStmt[v]): Unit & Impure = match stmt {
+        case RamStmt.Insert(relOp) => evalOp(db, Map#{}, relOp)
+        case RamStmt.Merge(src, dst) =>
             db |>
             MutMap.getOrElsePut!(dst, MutSet.empty()) |>
             MutSet.addAll!(MutMap.getWithDefault(src, MutSet.empty(), db))
-        case Stmt.Assign(lhs, rhs) =>
+        case RamStmt.Assign(lhs, rhs) =>
             db |>
             MutMap.put!(lhs, MutMap.getWithDefault(rhs, MutSet.empty(), db))
-        case Stmt.Purge(relSym) => MutMap.remove!(relSym, db)
-        case Stmt.Seq(stmts) => List.foreach(evalStmt(db), stmts)
-        case Stmt.While(test, body) =>
+        case RamStmt.Purge(relSym) => MutMap.remove!(relSym, db)
+        case RamStmt.Seq(stmts) => List.foreach(evalStmt(db), stmts)
+        case RamStmt.While(test, body) =>
             if (evalBoolExp(db, Map#{}, test)) {
                 evalStmt(db, body);
                 evalStmt(db, stmt)

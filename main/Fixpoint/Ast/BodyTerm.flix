@@ -13,17 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 namespace Fixpoint/Ast {
-    pub def isRangeRestricted(cs: List[Constraint[v]]): Bool =
-        List.forall(c -> match c {
-            case Constraint(_, head, body, _) => headVars(head) `Set.isSubsetOf` bodyVars(body)
-        }, cs)
-
-    pub def nonPositivelyBoundVar(cs: List[Constraint[v]]): Bool =
-        List.forall(c -> match c {
-            case Constraint(_, _, body, _) => match polarityVars(body) {
-                case (positive, negative)  => negative `Set.isSubsetOf` positive
-            }
-        }, cs)
+    pub enum BodyTerm[v] {
+        case Var(VarSym, SourceLocation)
+        case Lit(v, SourceLocation)
+    }
 }

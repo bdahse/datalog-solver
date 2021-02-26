@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-use Fixpoint/Ram.{Stmt, RelOp, RelSym, RamTerm, BoolExp, RowVar};
+use Fixpoint/Ram.{RamStmt, RelOp, RelSym, RamTerm, BoolExp, RowVar};
 
 namespace Fixpoint/Ast {
-    pub def compile(cs: List[Constraint[v]], strat: Map[PredSym, Int32]): Stmt[v] =
+    pub def compile(cs: List[Constraint[v]], strat: Map[PredSym, Int32]): RamStmt[v] =
         let facts = cs |> facts |> List.map(compileRule(-1)) |> List.fold;
         let strata =
             strat |>
@@ -27,32 +27,32 @@ namespace Fixpoint/Ast {
             List.fold;
         List.fold(facts :: strata :: Nil)
 
-    def compileStratum(stratum: List[Constraint[v]]): Stmt[v] =
+    def compileStratum(stratum: List[Constraint[v]]): RamStmt[v] =
         let idb = stratum |> idb |> Set.toList;
         let init = stratum |> List.map(compileRule(-1)) |> List.fold;
         let mergeDelta =
             idb |>
             List.map(match PredSym(relName, _) ->
-                Stmt.Merge(RelSym.New(relName), RelSym.Delta(relName))
+                RamStmt.Merge(RelSym.New(relName), RelSym.Delta(relName))
             ) |>
             List.fold;
         let mergeFull =
             idb |>
             List.map(match PredSym(relName, _) ->
-                Stmt.Merge(RelSym.New(relName), RelSym.Full(relName))
+                RamStmt.Merge(RelSym.New(relName), RelSym.Full(relName))
             ) |>
             List.fold;
         let eval = stratum |> List.map(compileRuleIncr) |> List.fold;
         let mergeNew =
             idb |>
             List.map(match PredSym(relName, _) ->
-                Stmt.Merge(RelSym.New(relName), RelSym.Full(relName))
+                RamStmt.Merge(RelSym.New(relName), RelSym.Full(relName))
             ) |>
             List.fold;
         let assign =
             idb |>
             List.map(match PredSym(relName, _) ->
-                Stmt.Assign(RelSym.Delta(relName), RelSym.New(relName))
+                RamStmt.Assign(RelSym.Delta(relName), RelSym.New(relName))
             ) |>
             List.fold;
         let whileTest =
@@ -63,11 +63,11 @@ namespace Fixpoint/Ast {
             List.reduceLeft(lhs -> rhs -> BoolExp.And(lhs, rhs)) |>
             Option.map(BoolExp.Not);
         let whileBody = List.fold(eval :: mergeNew :: assign :: Nil);
-        let fixpoint = Stmt.While(unwrap(whileTest), whileBody);
+        let fixpoint = RamStmt.While(unwrap(whileTest), whileBody);
         List.fold(init :: mergeDelta :: mergeFull :: fixpoint :: Nil)
 
     /// Compile rule into a join loop where delta designates the focused atom.
-    def compileRule(delta: Int32, rule: Constraint[v]): Stmt[v] = match rule {
+    def compileRule(delta: Int32, rule: Constraint[v]): RamStmt[v] = match rule {
         case Constraint(_, HeadAtom(PredSym(headPred, _), headTerms, _), body, _) =>
             let env = unifyVars(body);
             let join = joinTerms(env, body);
@@ -91,10 +91,10 @@ namespace Fixpoint/Ast {
                     (false, RelOp.Search(rowVar, relSym, searchCond, acc))
             }, (true, projection), rowVars(body)) |>
             snd |>
-            Stmt.Insert
+            RamStmt.Insert
     }
 
-    def compileRuleIncr(rule: Constraint[v]): Stmt[v] = match rule {
+    def compileRuleIncr(rule: Constraint[v]): RamStmt[v] = match rule {
         case Constraint(_, _, body, _) =>
             body |> List.mapWithIndex(_ -> i -> compileRule(i, rule)) |> List.fold
     }
@@ -106,8 +106,8 @@ namespace Fixpoint/Ast {
     }
 
     def compileBodyTerm(env: Map[VarSym, RamTerm[v]], term: BodyTerm[v]): RamTerm[v] = match term {
-        case BodyVar(var, _) => env |> Map.get(var) |> unwrap
-        case BodyLit(v, _) => RamTerm.Lit(v)
+        case BodyTerm.Var(var, _) => env |> Map.get(var) |> unwrap
+        case BodyTerm.Lit(v, _) => RamTerm.Lit(v)
     }
 
     def rowVars(body: List[BodyPredicate[v]]): List[RowVar] =
@@ -122,8 +122,8 @@ namespace Fixpoint/Ast {
             case BodyAtom(_, Negative, _, _) => acc
             case BodyAtom(_, Positive, terms, _) =>
                 List.mapWithIndex(term -> j -> match term {
-                    case BodyVar(var, _) => Map.singleton(var, RamTerm.Attribute(rowVar, j))
-                    case BodyLit(_, _) => Map#{}
+                    case BodyTerm.Var(var, _) => Map.singleton(var, RamTerm.Attribute(rowVar, j))
+                    case BodyTerm.Lit(_, _) => Map#{}
                 }, terms) |>
                 List.foldLeft(Map.union, acc)
         }, Map#{}, body, rowVars(body))
