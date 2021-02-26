@@ -15,8 +15,13 @@
  */
 
 use Fixpoint/Ram.{RamStmt, RelOp, RelSym, RamTerm, BoolExp, RowVar};
+use Fixpoint/Ast.{Constraint, BodyPredicate, BodyTerm, HeadTerm, Polarity, PredSym, VarSym};
+use Fixpoint/Ast.Constraint.Constraint;
+use Fixpoint/Ast.HeadPredicate.HeadAtom;
+use Fixpoint/Ast.BodyPredicate.BodyAtom;
+use Fixpoint/Ast.PredSym.PredSym;
 
-namespace Fixpoint/Ast {
+namespace Fixpoint {
     pub def compile(cs: List[Constraint[v]], strat: Map[PredSym, Int32]): RamStmt[v] =
         let facts = cs |> facts |> List.map(compileRule(-1)) |> List.fold;
         let strata =
@@ -75,8 +80,8 @@ namespace Fixpoint/Ast {
             let projection = RelOp.Project(ramTerms, RelSym.New(headPred));
             List.mapWithIndex(atom -> i -> (atom, i), body) |>
             List.foldRight2(rowVar -> match (atom, i) -> match (isLast, acc) -> match atom {
-                case BodyAtom(_, Negative, _, _) => (false, acc)
-                case BodyAtom(PredSym(pred, _), Positive, _, _) =>
+                case BodyAtom(_, Polarity.Negative, _, _) => (false, acc)
+                case BodyAtom(PredSym(pred, _), Polarity.Positive, _, _) =>
                     let relSym = if (i == delta) {
                         RelSym.Delta(pred)
                     } else {
@@ -119,8 +124,8 @@ namespace Fixpoint/Ast {
     /// corresponding to a positive atom where the variable is a term.
     def unifyVars(body: List[BodyPredicate[v]]): Map[VarSym, RamTerm[v]] =
         List.foldLeft2(acc -> atom -> rowVar -> match atom {
-            case BodyAtom(_, Negative, _, _) => acc
-            case BodyAtom(_, Positive, terms, _) =>
+            case BodyAtom(_, Polarity.Negative, _, _) => acc
+            case BodyAtom(_, Polarity.Positive, terms, _) =>
                 List.mapWithIndex(term -> j -> match term {
                     case BodyTerm.Var(var, _) => Map.singleton(var, RamTerm.Attribute(rowVar, j))
                     case BodyTerm.Lit(_, _) => Map#{}
@@ -132,12 +137,12 @@ namespace Fixpoint/Ast {
     /// and declares that terms in negative body atoms are not in the corresponding relations.
     def joinTerms(env: Map[VarSym, RamTerm[v]], body: List[BodyPredicate[v]]): Option[BoolExp[v]] =
         List.flatMap2(atom -> rowVar -> match atom {
-            case BodyAtom(_, Positive, terms, _) =>
+            case BodyAtom(_, Polarity.Positive, terms, _) =>
                 List.mapWithIndex(term -> j -> {
                     let ramTerm = compileBodyTerm(env, term);
                     BoolExp.Eq(ramTerm, RamTerm.Attribute(rowVar, j))
                 }, terms)
-            case BodyAtom(PredSym(relName, _), Negative, terms, _) =>
+            case BodyAtom(PredSym(relName, _), Polarity.Negative, terms, _) =>
                 let ramTerms = List.map(compileBodyTerm(env), terms);
                 BoolExp.Not(BoolExp.MemberOf(ramTerms, RelSym.Full(relName))) :: Nil
         }, body, rowVars(body)) |>
