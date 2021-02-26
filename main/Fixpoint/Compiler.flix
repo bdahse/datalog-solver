@@ -68,7 +68,7 @@ namespace Fixpoint/Ast {
 
     /// Compile rule into a join loop where delta designates the focused atom.
     def compileRule(delta: Int32, rule: Constraint[v]): RamStmt[v] = match rule {
-        case Constraint(_, HeadAtom(PredSym(headPred, _), headTerms, _), body, _) =>
+        case Constraint(HeadAtom(PredSym(headPred, _), headTerms, _), body, _) =>
             let env = unifyVars(body);
             let join = joinTerms(env, body);
             let ramTerms = List.map(compileHeadTerm(env), headTerms);
@@ -95,7 +95,7 @@ namespace Fixpoint/Ast {
     }
 
     def compileRuleIncr(rule: Constraint[v]): RamStmt[v] = match rule {
-        case Constraint(_, _, body, _) =>
+        case Constraint(_, body, _) =>
             body |> List.mapWithIndex(_ -> i -> compileRule(i, rule)) |> List.fold
     }
 
@@ -150,18 +150,18 @@ namespace Fixpoint/Ast {
 
     /// Restrict a constraint system to those rules whose head predicate belongs to a given domain.
     def restrict(cs: List[Constraint[v]], domain: Set[PredSym]): List[Constraint[v]] =
-        let headPred = match Constraint(_, HeadAtom(headSym, _, _), _, _) -> headSym;
+        let headPred = match Constraint(HeadAtom(headSym, _, _), _, _) -> headSym;
         let memberOf = xs -> x -> Set.memberOf(x, xs);
         List.filter(headPred >> memberOf(domain), cs)
 
     def idb(cs: List[Constraint[v]]): Set[PredSym] =
         let headPred = acc -> c -> match c {
-            case Constraint(_, _, Nil, _) => acc
-            case Constraint(_, HeadAtom(headSym, _, _), _, _) => Set.insert(headSym, acc)
+            case Constraint(_, Nil, _) => acc
+            case Constraint(HeadAtom(headSym, _, _), _, _) => Set.insert(headSym, acc)
         };
         List.foldLeft(headPred, Set#{}, cs)
 
     def facts(cs: List[Constraint[v]]): List[Constraint[v]] =
-        let body = match Constraint(_, _, atoms, _) -> atoms;
+        let body = match Constraint(_, atoms, _) -> atoms;
         List.filter(body >> List.isEmpty, cs)
 }

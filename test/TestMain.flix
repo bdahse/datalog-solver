@@ -30,20 +30,19 @@ pub def test01(): List[Constraint[String]] =
     /// Rich("Joakim").
     /// Famous("Joakim").
     /// Happy(person) :- Rich(person), Famous(person).
-    let fact1 = Constraint(Nil, HeadAtom(PredSym("Rich", Unknown),
-                                        HeadTerm.Lit("Magnus", Unknown) :: Nil, Unknown),
+    let fact1 = Constraint(HeadAtom(PredSym("Rich", Unknown),
+                                    HeadTerm.Lit("Magnus", Unknown) :: Nil, Unknown),
                             Nil, Unknown);
-    let fact2 = Constraint(Nil, HeadAtom(PredSym("Age", Unknown),
-                                        HeadTerm.Lit("34", Unknown) :: Nil, Unknown),
+    let fact2 = Constraint(HeadAtom(PredSym("Age", Unknown),
+                                    HeadTerm.Lit("34", Unknown) :: Nil, Unknown),
                             Nil, Unknown);
-    let fact3 = Constraint(Nil, HeadAtom(PredSym("Rich", Unknown),
-                                        HeadTerm.Lit("Joakim", Unknown) :: Nil, Unknown),
+    let fact3 = Constraint(HeadAtom(PredSym("Rich", Unknown),
+                                    HeadTerm.Lit("Joakim", Unknown) :: Nil, Unknown),
                             Nil, Unknown);
-    let fact4 = Constraint(Nil, HeadAtom(PredSym("Famous", Unknown),
-                                        HeadTerm.Lit("Joakim", Unknown) :: Nil, Unknown),
+    let fact4 = Constraint(HeadAtom(PredSym("Famous", Unknown),
+                                    HeadTerm.Lit("Joakim", Unknown) :: Nil, Unknown),
                             Nil, Unknown);
-    let rule1 = Constraint(VarSym("person", Unknown) :: Nil,
-                            HeadAtom(PredSym("Happy", Unknown),
+    let rule1 = Constraint(HeadAtom(PredSym("Happy", Unknown),
                                     HeadTerm.Var(VarSym("person", Unknown), Unknown) :: Nil,
                                     Unknown),
                             BodyAtom(PredSym("Rich", Unknown),
@@ -68,20 +67,19 @@ pub def test02() : List[Constraint[String]] =
     /// Path(x, z) :- Path(x, y), Edge(y, z).
     /// Unconnected(x, y) :- Vertex(x), Vertex(y), not Path(x, y).
     /// AntiSymmetric(x, y) :- Path(x, y), not Path(y, x).
-    let fact1 = Constraint(Nil, HeadAtom(PredSym("Edge", Unknown),
-                                        HeadTerm.Lit("A", Unknown) ::
-                                        HeadTerm.Lit("B", Unknown) :: Nil, Unknown),
+    let fact1 = Constraint(HeadAtom(PredSym("Edge", Unknown),
+                                    HeadTerm.Lit("A", Unknown) ::
+                                    HeadTerm.Lit("B", Unknown) :: Nil, Unknown),
                             Nil, Unknown);
-    let fact2 = Constraint(Nil, HeadAtom(PredSym("Edge", Unknown),
-                                        HeadTerm.Lit("B", Unknown) ::
-                                        HeadTerm.Lit("C", Unknown) :: Nil, Unknown),
+    let fact2 = Constraint(HeadAtom(PredSym("Edge", Unknown),
+                                    HeadTerm.Lit("B", Unknown) ::
+                                    HeadTerm.Lit("C", Unknown) :: Nil, Unknown),
                             Nil, Unknown);
-    let fact3 = Constraint(Nil, HeadAtom(PredSym("Edge", Unknown),
-                                        HeadTerm.Lit("C", Unknown) ::
-                                        HeadTerm.Lit("D", Unknown) :: Nil, Unknown),
+    let fact3 = Constraint(HeadAtom(PredSym("Edge", Unknown),
+                                    HeadTerm.Lit("C", Unknown) ::
+                                    HeadTerm.Lit("D", Unknown) :: Nil, Unknown),
                             Nil, Unknown);
-    let rule1 = Constraint(VarSym("x", Unknown) :: VarSym("_", Unknown) :: Nil,
-                            HeadAtom(PredSym("Vertex", Unknown),
+    let rule1 = Constraint(HeadAtom(PredSym("Vertex", Unknown),
                                     HeadTerm.Var(VarSym("x", Unknown), Unknown) :: Nil,
                                     Unknown),
                             BodyAtom(PredSym("Edge", Unknown),
@@ -90,8 +88,7 @@ pub def test02() : List[Constraint[String]] =
                                     BodyTerm.Var(VarSym("_", Unknown), Unknown) :: Nil,
                                     Unknown) :: Nil,
                             Unknown);
-    let rule2 = Constraint(VarSym("y", Unknown) :: VarSym("_", Unknown) :: Nil,
-                            HeadAtom(PredSym("Vertex", Unknown),
+    let rule2 = Constraint(HeadAtom(PredSym("Vertex", Unknown),
                                     HeadTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
                                     Unknown),
                             BodyAtom(PredSym("Edge", Unknown),
@@ -100,8 +97,7 @@ pub def test02() : List[Constraint[String]] =
                                     BodyTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
                                     Unknown) :: Nil,
                             Unknown);
-    let rule3 = Constraint(VarSym("x", Unknown) :: VarSym("y", Unknown) :: Nil,
-                            HeadAtom(PredSym("Path", Unknown),
+    let rule3 = Constraint(HeadAtom(PredSym("Path", Unknown),
                                     HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
                                     HeadTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
                                     Unknown),
@@ -111,8 +107,7 @@ pub def test02() : List[Constraint[String]] =
                                     BodyTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
                                     Unknown) :: Nil,
                             Unknown);
-    let rule4 = Constraint(VarSym("x", Unknown) :: VarSym("y", Unknown) :: VarSym("z", Unknown) :: Nil,
-                            HeadAtom(PredSym("Path", Unknown),
+    let rule4 = Constraint(HeadAtom(PredSym("Path", Unknown),
                                     HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
                                     HeadTerm.Var(VarSym("z", Unknown), Unknown) :: Nil,
                                     Unknown),
@@ -127,8 +122,7 @@ pub def test02() : List[Constraint[String]] =
                                     BodyTerm.Var(VarSym("z", Unknown), Unknown) :: Nil,
                                     Unknown) :: Nil,
                             Unknown);
-    let rule5 = Constraint(VarSym("x", Unknown) :: VarSym("y", Unknown) :: Nil,
-                            HeadAtom(PredSym("Unconnected", Unknown),
+    let rule5 = Constraint(HeadAtom(PredSym("Unconnected", Unknown),
                                     HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
                                     HeadTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
                                     Unknown),
@@ -146,8 +140,7 @@ pub def test02() : List[Constraint[String]] =
                                     BodyTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
                                     Unknown) :: Nil,
                             Unknown);
-    let rule6 = Constraint(VarSym("x", Unknown) :: VarSym("y", Unknown) :: Nil,
-                            HeadAtom(PredSym("AntiSymmetric", Unknown),
+    let rule6 = Constraint(HeadAtom(PredSym("AntiSymmetric", Unknown),
                                     HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
                                     HeadTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
                                     Unknown),
