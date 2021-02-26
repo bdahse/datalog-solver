@@ -24,7 +24,10 @@ namespace Fixpoint {
     pub def interpret[v : Order : Eq](stmt: RamStmt[v]): Map[String, Set[List[v]]] & Impure =
         let db = MutMap.empty();
         evalStmt(db, stmt);
-        ???
+        MutMap.foldLeftWithKey(acc -> k -> v -> match k {
+            case RelSym.Full(relName) => Map.insert(relName, MutSet.toImmutable(v), acc)
+            case _ => acc
+        }, Map#{}, db)
 
     def evalStmt[v : Order : Eq](db: Database[v], stmt: RamStmt[v]): Unit & Impure = match stmt {
         case RamStmt.Insert(relOp) => evalOp(db, Map#{}, relOp)
