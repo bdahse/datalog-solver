@@ -15,6 +15,6 @@
  */
 namespace Fixpoint/Ast {
     pub enum Constraint[v] {
-        case Constraint(List[ConstraintParam], HeadPredicate[v], List[BodyPredicate[v]], SourceLocation)
+        case Constraint(HeadPredicate[v], List[BodyPredicate[v]], SourceLocation)
     }
 }

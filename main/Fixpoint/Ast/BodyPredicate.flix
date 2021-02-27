@@ -18,10 +18,9 @@ namespace Fixpoint/Ast {
         case BodyAtom(PredSym, Polarity, List[BodyTerm[v]], SourceLocation)
     }
 
-    def bodyVars(body: List[BodyPredicate[v]]): Set[VarSym] =
-        List.foldLeft((acc, bp) -> match bp {
-            case BodyAtom(_, _, terms, _) => Set.union(acc, btermVars(terms))
-        }, Set.empty(), body)
+    def bodyVars(body: List[BodyPredicate[v]]): Set[VarSym] = match polarityVars(body) {
+        case (p, n) => Set.union(p, n)
+    }
 
     def polarityVars(body: List[BodyPredicate[v]]): (Set[VarSym], Set[VarSym]) =
         List.foldLeft((acc, bp) -> match (acc, bp) {
@@ -31,7 +30,7 @@ namespace Fixpoint/Ast {
 
     def btermVars(terms: List[BodyTerm[v]]): Set[VarSym] =
         List.foldLeft((acc, t) -> match t {
-            case BodyVar(var, _) => Set.insert(var, acc)
+            case BodyTerm.Var(var, _) => Set.insert(var, acc)
             case _ => acc
         }, Set.empty(), terms)
 }

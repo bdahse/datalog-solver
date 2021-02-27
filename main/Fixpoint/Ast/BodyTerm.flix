@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 namespace Fixpoint/Ast {
-    pub enum HeadTerm[v] {
-        case HeadVar(VarSym, SourceLocation)
-        case HeadLit(v, SourceLocation)
-        case HeadApp(v -> v, HeadTerm[v], SourceLocation)
+    pub enum BodyTerm[v] {
+        case Var(VarSym, SourceLocation)
+        case Lit(v, SourceLocation)
     }
 }
