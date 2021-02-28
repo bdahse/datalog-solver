@@ -47,6 +47,7 @@ namespace Fixpoint {
             } else {
                 ()
             }
+        case RamStmt.Comment(_) => ()
     }
 
     def evalOp[v : Order : Eq](db: Database[v], env: SearchEnv[v], op: RelOp[v]): Unit & Impure = match op {

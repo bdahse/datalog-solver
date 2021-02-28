@@ -22,6 +22,7 @@ namespace Fixpoint/Ram {
         case Purge(RelSym)
         case Seq(List[RamStmt[v]])
         case While(BoolExp[v], RamStmt[v])
+        case Comment(String)
     }
 
     instance Monoid[RamStmt[v]] {
@@ -49,6 +50,7 @@ namespace Fixpoint/Ram {
                     "while(" + toString(test) + ") do" + nl +
                         String.indent(4, toString(body)) +
                     "end"
+                case Comment(comment) => "// " + comment
             }
     }
 }

@@ -13,8 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+use ToString.toString;
+
 namespace Fixpoint/Ast {
     pub enum Constraint[v] {
         case Constraint(HeadPredicate[v], List[BodyPredicate[v]], SourceLocation)
+    }
+
+    instance ToString[Constraint[v]] with [v : ToString] {
+        def toString(c: Constraint[v]): String = match c {
+            case Constraint(head, Nil, _) => toString(head)
+            case Constraint(head, body, _) =>
+                let atoms = List.map(toString, body) |> String.intercalate(", ");
+                toString(head) + " :- " + atoms
+        }
     }
 }

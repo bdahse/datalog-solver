@@ -13,6 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+use ToString.toString;
+
 namespace Fixpoint/Ast {
     pub enum BodyPredicate[v] {
         case BodyAtom(PredSym, Polarity, List[BodyTerm[v]], SourceLocation)
@@ -33,4 +36,15 @@ namespace Fixpoint/Ast {
             case BodyTerm.Var(var, _) => Set.insert(var, acc)
             case _ => acc
         }, Set.empty(), terms)
+
+    instance ToString[BodyPredicate[v]] with [v : ToString] {
+        def toString(body: BodyPredicate[v]): String = match body {
+            case BodyAtom(predSym, Positive, terms, _) =>
+                let ts = List.map(toString, terms) |> String.intercalate(", ");
+                toString(predSym) + "(" + ts + ")"
+            case BodyAtom(predSym, Negative, terms, _) =>
+                let ts = List.map(toString, terms) |> String.intercalate(", ");
+                "not " + toString(predSym) + "(" + ts + ")"
+        }
+    }
 }

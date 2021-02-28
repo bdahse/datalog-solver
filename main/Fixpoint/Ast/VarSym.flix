@@ -18,6 +18,12 @@ namespace Fixpoint/Ast {
         case VarSym(String, SourceLocation)
     }
 
+    instance ToString[VarSym] {
+        def toString(varSym: VarSym): String = match varSym {
+            case VarSym(name, _) => name
+        }
+    }
+
     instance Order[VarSym] {
         def less(a: VarSym, b: VarSym): Bool = match a <=> b {
             case LessThan => true

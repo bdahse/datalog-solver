@@ -25,8 +25,7 @@ use Fixpoint/Ast.VarSym.VarSym;
 use Fixpoint.{compile, interpret};
 use ToString.toString;
 
-@test
-pub def test01(): Bool & Impure =
+pub def prog01(): List[Constraint[String]] =
     /// Rich("Magnus").
     /// Age(34).
     /// Rich("Joakim").
@@ -56,15 +55,9 @@ pub def test01(): Bool & Impure =
                                     BodyTerm.Var(VarSym("person", Unknown), Unknown) :: Nil,
                                     Unknown) :: Nil,
                             Unknown);
-    let cs = fact1 :: fact2 :: fact3 :: fact4 :: rule1 :: Nil;
-    let strat = Map#{
-        PredSym("Happy", Unknown) -> 0
-    };
-    toString(compile(strat, cs) |> interpret) ==
-    "Map#{Age -> Set#{34 :: Nil}, Famous -> Set#{Joakim :: Nil}, Happy -> Set#{Joakim :: Nil}, Rich -> Set#{Joakim :: Nil, Magnus :: Nil}}"
+    fact1 :: fact2 :: fact3 :: fact4 :: rule1 :: Nil
 
-@test
-pub def test02() : Bool & Impure =
+pub def prog02(): List[Constraint[String]] =
     /// Edge(A, B).
     /// Edge(B, C).
     /// Edge(C, D).
@@ -167,13 +160,23 @@ pub def test02() : Bool & Impure =
                                     BodyTerm.Var(VarSym("x", Unknown), Unknown) :: Nil,
                                     Unknown) :: Nil,
                             Unknown);
-    let cs = fact1 :: fact2 :: fact3 :: fact4 ::
-             rule1 :: rule2 :: rule3 :: rule4 :: rule5 :: rule6 :: Nil;
+    fact1 :: fact2 :: fact3 :: fact4 :: rule1 :: rule2 :: rule3 :: rule4 :: rule5 :: rule6 :: Nil
+
+@test
+pub def test01(): Bool & Impure =
+    let strat = Map#{
+        PredSym("Happy", Unknown) -> 0
+    };
+    toString(compile(strat, prog01()) |> interpret) ==
+    "Map#{Age -> Set#{34 :: Nil}, Famous -> Set#{Joakim :: Nil}, Happy -> Set#{Joakim :: Nil}, Rich -> Set#{Joakim :: Nil, Magnus :: Nil}}"
+
+@test
+pub def test02() : Bool & Impure =
     let strat = Map#{
         PredSym("Vertex", Unknown) -> 0,
         PredSym("Path", Unknown) -> 0,
         PredSym("Unconnected", Unknown) -> 1,
         PredSym("AntiSymmetric", Unknown) -> 1
     };
-    toString(compile(strat, cs) |> interpret) ==
+    toString(compile(strat, prog02()) |> interpret) ==
     "Map#{AntiSymmetric -> Set#{A :: B :: Nil, A :: C :: Nil, A :: D :: Nil}, Edge -> Set#{A :: B :: Nil, B :: C :: Nil, C :: D :: Nil, D :: B :: Nil}, Path -> Set#{A :: B :: Nil, A :: C :: Nil, A :: D :: Nil, B :: B :: Nil, B :: C :: Nil, B :: D :: Nil, C :: B :: Nil, C :: C :: Nil, C :: D :: Nil, D :: B :: Nil, D :: C :: Nil, D :: D :: Nil}, Unconnected -> Set#{A :: A :: Nil, B :: A :: Nil, C :: A :: Nil, D :: A :: Nil}, Vertex -> Set#{A :: Nil, B :: Nil, C :: Nil, D :: Nil}}"
