@@ -31,9 +31,11 @@ namespace Fixpoint {
             List.fold;
         List.fold(facts :: strata :: Nil)
 
+    /// Compile all rules to be computed in a stratum to RAM, by using semi-naive evaluation
+    /// as a code generator.
     def compileStratum[v : ToString](stratum: List[Constraint[v]]): RamStmt[v] =
         let idb = idb(stratum) |> Set.toList;
-        let init = List.map(compileRule, stratum) |> List.fold;
+        let eval = List.map(compileRule, stratum) |> List.fold;
         let mergeDelta =
             List.map(match PredSym(relName, _) -> {
                 RamStmt.Merge(RelSym.Full(relName), RelSym.Delta(relName))
@@ -44,7 +46,7 @@ namespace Fixpoint {
                 RamStmt.Purge(RelSym.New(relName))
             }, idb) |>
             List.fold;
-        let eval = List.map(compileRuleIncr, stratum) |> List.fold;
+        let evalIncr = List.map(compileRuleIncr, stratum) |> List.fold;
         let mergeNew =
             List.map(match PredSym(relName, _) -> {
                 RamStmt.Merge(RelSym.New(relName), RelSym.Full(relName))
@@ -61,9 +63,9 @@ namespace Fixpoint {
             }, idb) |>
             List.reduceLeft(lhs -> rhs -> BoolExp.And(lhs, rhs)) |>
             Option.map(BoolExp.Not);
-        let whileBody = List.fold(purge :: eval :: mergeNew :: assign :: Nil);
+        let whileBody = List.fold(purge :: evalIncr :: mergeNew :: assign :: Nil);
         let fixpoint = RamStmt.While(unwrap(whileTest), whileBody);
-        List.fold(init :: mergeDelta :: fixpoint :: Nil)
+        List.fold(eval :: mergeDelta :: fixpoint :: Nil)
 
     /// Compile rule into a join loop.
     def compileRule[v : ToString](rule: Constraint[v]): RamStmt[v] = match rule {
@@ -74,17 +76,13 @@ namespace Fixpoint {
             let ramTerms = List.map(compileHeadTerm(env), headTerms);
             let projection = RelOp.Project(ramTerms, RelSym.Full(headPred));
             let insert =
-                List.filter(match (atom, _, _) -> match atom {
-                        case BodyAtom(_, Polarity.Positive, _, _) => true
-                        case BodyAtom(_, Polarity.Negative, _, _) => false
-                }, augBody) |>
                 List.foldRight(match (atom, rowVar, _) -> match (isLast, acc) -> match atom {
                     case BodyAtom(PredSym(pred, _), _, _, _) =>
                         if (isLast)
                             (false, RelOp.Search(rowVar, RelSym.Full(pred), join, acc))
                         else
                             (false, RelOp.Search(rowVar, RelSym.Full(pred), None, acc))
-                }, (true, projection)) |>
+                }, (true, projection), positiveAtoms(augBody)) |>
                 snd |>
                 RamStmt.Insert;
             let comment = RamStmt.Comment(ToString.toString(rule));
@@ -94,10 +92,7 @@ namespace Fixpoint {
     def compileRuleIncr[v : ToString](rule: Constraint[v]): RamStmt[v] = match rule {
         case Constraint(HeadAtom(PredSym(headPred, _), headTerms, _), body, _) =>
             let augBody = augmentBody(body);
-            let positiveAtoms = List.filter(match (atom, _, _) -> match atom {
-                case BodyAtom(_, Polarity.Positive, _, _) => true
-                case BodyAtom(_, Polarity.Negative, _, _) => false
-            }, augBody);
+            let positiveAtoms = positiveAtoms(augBody);
             /// Compile rule into an incremental join loop where delta designates the focused atom.
             let compile = delta -> {
                 let env = unifyVars(augBody);
@@ -143,6 +138,13 @@ namespace Fixpoint {
         List.mapWithIndex(atom -> i -> match atom {
             case BodyAtom(PredSym(pred, _), _, _, _) =>
                 (atom, RowVar.Named(pred + "$" + ToString.toString(i)), i)
+        }, body)
+
+    /// Return all positive atoms present in body.
+    def positiveAtoms(body: List[(BodyPredicate[v], RowVar, Int32)]): List[(BodyPredicate[v], RowVar, Int32)] =
+        List.filter(match (atom, _, _) -> match atom {
+            case BodyAtom(_, Polarity.Positive, _, _) => true
+            case BodyAtom(_, Polarity.Negative, _, _) => false
         }, body)
 
     /// Unifies each variable that occurs in a rule body with an attribute
