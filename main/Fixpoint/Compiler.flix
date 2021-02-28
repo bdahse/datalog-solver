@@ -23,7 +23,7 @@ use Fixpoint/Ast.PredSym.PredSym;
 
 namespace Fixpoint {
     pub def compile(strat: Map[PredSym, Int32], cs: List[Constraint[v]]): RamStmt[v] =
-        let facts = cs |> facts |> List.map(compileRule(-1)) |> List.fold;
+        let facts = cs |> facts |> List.map(compileRule) |> List.fold;
         let strata =
             strat |>
             Map.invert |>
@@ -34,17 +34,11 @@ namespace Fixpoint {
 
     def compileStratum(stratum: List[Constraint[v]]): RamStmt[v] =
         let idb = stratum |> idb |> Set.toList;
-        let init = stratum |> List.map(compileRule(-1)) |> List.fold;
+        let init = stratum |> List.map(compileRule) |> List.fold;
         let mergeDelta =
             idb |>
             List.map(match PredSym(relName, _) ->
-                RamStmt.Merge(RelSym.New(relName), RelSym.Delta(relName))
-            ) |>
-            List.fold;
-        let mergeFull =
-            idb |>
-            List.map(match PredSym(relName, _) ->
-                RamStmt.Merge(RelSym.New(relName), RelSym.Full(relName))
+                RamStmt.Merge(RelSym.Full(relName), RelSym.Delta(relName))
             ) |>
             List.fold;
         let purge =
@@ -75,39 +69,56 @@ namespace Fixpoint {
             Option.map(BoolExp.Not);
         let whileBody = List.fold(purge :: eval :: mergeNew :: assign :: Nil);
         let fixpoint = RamStmt.While(unwrap(whileTest), whileBody);
-        List.fold(init :: mergeDelta :: mergeFull :: fixpoint :: Nil)
+        List.fold(init :: mergeDelta :: fixpoint :: Nil)
 
-    /// Compile rule into a join loop where delta designates the focused atom.
-    def compileRule(delta: Int32, rule: Constraint[v]): RamStmt[v] = match rule {
+    /// Compile rule into a join loop.
+    def compileRule(rule: Constraint[v]): RamStmt[v] = match rule {
         case Constraint(HeadAtom(PredSym(headPred, _), headTerms, _), body, _) =>
             let env = unifyVars(body);
             let join = joinTerms(env, body);
             let ramTerms = List.map(compileHeadTerm(env), headTerms);
-            let projection = RelOp.Project(ramTerms, RelSym.New(headPred));
-            List.mapWithIndex(atom -> i -> (atom, i), body) |>
-            List.foldRight2(rowVar -> match (atom, i) -> match (isLast, acc) -> match atom {
+            let projection = RelOp.Project(ramTerms, RelSym.Full(headPred));
+            List.foldRight2(atom -> rowVar -> match (isLast, acc) -> match atom {
                 case BodyAtom(_, Polarity.Negative, _, _) => (false, acc)
                 case BodyAtom(PredSym(pred, _), Polarity.Positive, _, _) =>
-                    let relSym = if (i == delta) {
-                        RelSym.Delta(pred)
-                    } else {
-                        RelSym.Full(pred)
-                    };
-                    let searchCond = if (isLast) {
-                        join |>
-                        Option.map(lhs -> BoolExp.And(lhs, BoolExp.Not(BoolExp.MemberOf(ramTerms, RelSym.Full(headPred)))))
-                    } else {
-                        None
-                    };
-                    (false, RelOp.Search(rowVar, relSym, searchCond, acc))
-            }, (true, projection), rowVars(body)) |>
+                    if (isLast)
+                        (false, RelOp.Search(rowVar, RelSym.Full(pred), join, acc))
+                    else
+                        (false, RelOp.Search(rowVar, RelSym.Full(pred), None, acc))
+            }, (true, projection), body, rowVars(body)) |>
             snd |>
             RamStmt.Insert
     }
 
     def compileRuleIncr(rule: Constraint[v]): RamStmt[v] = match rule {
-        case Constraint(_, body, _) =>
-            body |> List.mapWithIndex(_ -> i -> compileRule(i, rule)) |> List.fold
+        case Constraint(HeadAtom(PredSym(headPred, _), headTerms, _), body, _) =>
+            /// Compile rule into an incremental join loop where delta designates the focused atom.
+            let compile = delta -> {
+                let env = unifyVars(body);
+                let join = joinTerms(env, body);
+                let ramTerms = List.map(compileHeadTerm(env), headTerms);
+                let projection = RelOp.Project(ramTerms, RelSym.New(headPred));
+                List.mapWithIndex(atom -> i -> (atom, i), body) |>
+                List.foldRight2(rowVar -> match (atom, i) -> match (isLast, acc) -> match atom {
+                    case BodyAtom(_, Polarity.Negative, _, _) => (false, acc)
+                    case BodyAtom(PredSym(pred, _), Polarity.Positive, _, _) =>
+                        let relSym = if (i == delta) {
+                            RelSym.Delta(pred)
+                        } else {
+                            RelSym.Full(pred)
+                        };
+                        let searchCond = if (isLast) {
+                            join |>
+                            Option.map(lhs -> BoolExp.And(lhs, BoolExp.Not(BoolExp.MemberOf(ramTerms, RelSym.Full(headPred)))))
+                        } else {
+                            None
+                        };
+                        (false, RelOp.Search(rowVar, relSym, searchCond, acc))
+                }, (true, projection), rowVars(body)) |>
+                snd |>
+                RamStmt.Insert
+            };
+            List.mapWithIndex(_ -> i -> compile(i), body) |> List.fold
     }
 
     def compileHeadTerm(env: Map[VarSym, RamTerm[v]], term: HeadTerm[v]): RamTerm[v] = match term {
