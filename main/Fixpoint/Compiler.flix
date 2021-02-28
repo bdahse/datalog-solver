@@ -74,34 +74,41 @@ namespace Fixpoint {
     /// Compile rule into a join loop.
     def compileRule(rule: Constraint[v]): RamStmt[v] = match rule {
         case Constraint(HeadAtom(PredSym(headPred, _), headTerms, _), body, _) =>
-            let env = unifyVars(body);
-            let join = joinTerms(env, body);
+            let augBody = augmentBody(body);
+            let env = unifyVars(augBody);
+            let join = joinTerms(env, augBody);
             let ramTerms = List.map(compileHeadTerm(env), headTerms);
             let projection = RelOp.Project(ramTerms, RelSym.Full(headPred));
-            List.foldRight2(atom -> rowVar -> match (isLast, acc) -> match atom {
-                case BodyAtom(_, Polarity.Negative, _, _) => (false, acc)
-                case BodyAtom(PredSym(pred, _), Polarity.Positive, _, _) =>
+            List.filter(match (atom, _, _) -> match atom {
+                    case BodyAtom(_, Polarity.Positive, _, _) => true
+                    case BodyAtom(_, Polarity.Negative, _, _) => false
+            }, augBody) |>
+            List.foldRight(match (atom, rowVar, _) -> match (isLast, acc) -> match atom {
+                case BodyAtom(PredSym(pred, _), _, _, _) =>
                     if (isLast)
                         (false, RelOp.Search(rowVar, RelSym.Full(pred), join, acc))
                     else
                         (false, RelOp.Search(rowVar, RelSym.Full(pred), None, acc))
-            }, (true, projection), body, rowVars(body)) |>
+            }, (true, projection)) |>
             snd |>
             RamStmt.Insert
     }
 
     def compileRuleIncr(rule: Constraint[v]): RamStmt[v] = match rule {
         case Constraint(HeadAtom(PredSym(headPred, _), headTerms, _), body, _) =>
+            let augBody = augmentBody(body);
             /// Compile rule into an incremental join loop where delta designates the focused atom.
             let compile = delta -> {
-                let env = unifyVars(body);
-                let join = joinTerms(env, body);
+                let env = unifyVars(augBody);
+                let join = joinTerms(env, augBody);
                 let ramTerms = List.map(compileHeadTerm(env), headTerms);
                 let projection = RelOp.Project(ramTerms, RelSym.New(headPred));
-                List.mapWithIndex(atom -> i -> (atom, i), body) |>
-                List.foldRight2(rowVar -> match (atom, i) -> match (isLast, acc) -> match atom {
-                    case BodyAtom(_, Polarity.Negative, _, _) => (false, acc)
-                    case BodyAtom(PredSym(pred, _), Polarity.Positive, _, _) =>
+                List.filter(match (atom, _, _) -> match atom {
+                    case BodyAtom(_, Polarity.Positive, _, _) => true
+                    case BodyAtom(_, Polarity.Negative, _, _) => false
+                }, augBody) |>
+                List.foldRight(match (atom, rowVar, i) -> match (isLast, acc) -> match atom {
+                    case BodyAtom(PredSym(pred, _), _, _, _) =>
                         let relSym = if (i == delta) {
                             RelSym.Delta(pred)
                         } else {
@@ -114,11 +121,11 @@ namespace Fixpoint {
                             None
                         };
                         (false, RelOp.Search(rowVar, relSym, searchCond, acc))
-                }, (true, projection), rowVars(body)) |>
+                }, (true, projection)) |>
                 snd |>
                 RamStmt.Insert
             };
-            List.mapWithIndex(_ -> i -> compile(i), body) |> List.fold
+            List.map(match (_, _, i) -> compile(i), augBody) |> List.fold
     }
 
     def compileHeadTerm(env: Map[VarSym, RamTerm[v]], term: HeadTerm[v]): RamTerm[v] = match term {
@@ -132,15 +139,17 @@ namespace Fixpoint {
         case BodyTerm.Lit(v, _) => RamTerm.Lit(v)
     }
 
-    def rowVars(body: List[BodyPredicate[v]]): List[RowVar] =
-        List.mapWithIndex(match BodyAtom(PredSym(pred, _), _, _, _) -> i -> {
-            RowVar.Named(pred + "$" + ToString.toString(i))
+    /// Augment body atoms with row variables and indices.
+    def augmentBody(body: List[BodyPredicate[v]]): List[(BodyPredicate[v], RowVar, Int32)] =
+        List.mapWithIndex(atom -> i -> match atom {
+            case BodyAtom(PredSym(pred, _), _, _, _) =>
+                (atom, RowVar.Named(pred + "$" + ToString.toString(i)), i)
         }, body)
 
     /// Unifies each variable that occurs in a rule body with an attribute
     /// corresponding to a positive atom where the variable is a term.
-    def unifyVars(body: List[BodyPredicate[v]]): Map[VarSym, RamTerm[v]] =
-        List.foldLeft2(acc -> atom -> rowVar -> match atom {
+    def unifyVars(body: List[(BodyPredicate[v], RowVar, Int32)]): Map[VarSym, RamTerm[v]] =
+        List.foldLeft(acc -> match (atom, rowVar, _) -> match atom {
             case BodyAtom(_, Polarity.Negative, _, _) => acc
             case BodyAtom(_, Polarity.Positive, terms, _) =>
                 List.mapWithIndex(term -> j -> match term {
@@ -148,12 +157,12 @@ namespace Fixpoint {
                     case BodyTerm.Lit(_, _) => Map#{}
                 }, terms) |>
                 List.foldLeft(Map.union, acc)
-        }, Map#{}, body, rowVars(body))
+        }, Map#{}, body)
 
     /// Equates every term in a positive body atom with an attribute
     /// and declares that terms in negative body atoms are not in the corresponding relations.
-    def joinTerms(env: Map[VarSym, RamTerm[v]], body: List[BodyPredicate[v]]): Option[BoolExp[v]] =
-        List.flatMap2(atom -> rowVar -> match atom {
+    def joinTerms(env: Map[VarSym, RamTerm[v]], body: List[(BodyPredicate[v], RowVar, Int32)]): Option[BoolExp[v]] =
+        List.flatMap(match (atom, rowVar, _) -> match atom {
             case BodyAtom(_, Polarity.Positive, terms, _) =>
                 List.mapWithIndex(term -> j -> {
                     let ramTerm = compileBodyTerm(env, term);
@@ -162,7 +171,7 @@ namespace Fixpoint {
             case BodyAtom(PredSym(relName, _), Polarity.Negative, terms, _) =>
                 let ramTerms = List.map(compileBodyTerm(env), terms);
                 BoolExp.Not(BoolExp.MemberOf(ramTerms, RelSym.Full(relName))) :: Nil
-        }, body, rowVars(body)) |>
+        }, body) |>
         List.reduceLeft(lhs -> rhs -> BoolExp.And(lhs, rhs))
 
     def unwrap(o: Option[a]): a = match o {
