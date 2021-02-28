@@ -19,6 +19,12 @@ namespace Fixpoint/Ram {
         case Named(String)
     }
 
+    instance ToString[RowVar] {
+        def toString(var: RowVar): String = match var {
+            case Named(name) => name
+        }
+    }
+
     instance Order[RowVar] {
         def less(a: RowVar, b: RowVar): Bool = match a <=> b {
             case LessThan => true

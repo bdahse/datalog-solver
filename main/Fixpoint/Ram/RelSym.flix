@@ -21,6 +21,14 @@ namespace Fixpoint/Ram {
         case New(String)
     }
 
+    instance ToString[RelSym] {
+        def toString(relSym: RelSym): String = match relSym {
+            case Full(name) => name
+            case Delta(name) => "Δ" + name
+            case New(name) => "Δ" + name + "'"
+        }
+    }
+
     instance Order[RelSym] {
         def less(a: RelSym, b: RelSym): Bool = match a <=> b {
             case LessThan => true
