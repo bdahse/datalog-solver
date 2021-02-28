@@ -47,6 +47,12 @@ namespace Fixpoint {
                 RamStmt.Merge(RelSym.New(relName), RelSym.Full(relName))
             ) |>
             List.fold;
+        let purge =
+            idb |>
+            List.map(match PredSym(relName, _) ->
+                RamStmt.Purge(RelSym.New(relName))
+            ) |>
+            List.fold;
         let eval = stratum |> List.map(compileRuleIncr) |> List.fold;
         let mergeNew =
             idb |>
@@ -67,7 +73,7 @@ namespace Fixpoint {
             ) |>
             List.reduceLeft(lhs -> rhs -> BoolExp.And(lhs, rhs)) |>
             Option.map(BoolExp.Not);
-        let whileBody = List.fold(eval :: mergeNew :: assign :: Nil);
+        let whileBody = List.fold(purge :: eval :: mergeNew :: assign :: Nil);
         let fixpoint = RamStmt.While(unwrap(whileTest), whileBody);
         List.fold(init :: mergeDelta :: mergeFull :: fixpoint :: Nil)
 
