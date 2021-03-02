@@ -24,6 +24,6 @@ def main(_args: Array[String]): Int32 & Impure =
         PredSym("Unconnected", Unknown) -> 1,
         PredSym("AntiSymmetric", Unknown) -> 1
     };
-    prog02() |> compile(strat) |> ToString.toString |> println;
+    prog02() |> compile(strat) |> println;
     123
 

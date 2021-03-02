@@ -168,7 +168,7 @@ pub def test01(): Bool & Impure =
         PredSym("Happy", Unknown) -> 0
     };
     toString(compile(strat, prog01()) |> interpret) ==
-    "Map#{Age -> Set#{34 :: Nil}, Famous -> Set#{Joakim :: Nil}, Happy -> Set#{Joakim :: Nil}, Rich -> Set#{Joakim :: Nil, Magnus :: Nil}}"
+    "Model#{Age#{34}, Famous#{Joakim}, Happy#{Joakim}, Rich#{Magnus, Joakim}}"
 
 @test
 pub def test02() : Bool & Impure =
@@ -179,4 +179,4 @@ pub def test02() : Bool & Impure =
         PredSym("AntiSymmetric", Unknown) -> 1
     };
     toString(compile(strat, prog02()) |> interpret) ==
-    "Map#{AntiSymmetric -> Set#{A :: B :: Nil, A :: C :: Nil, A :: D :: Nil}, Edge -> Set#{A :: B :: Nil, B :: C :: Nil, C :: D :: Nil, D :: B :: Nil}, Path -> Set#{A :: B :: Nil, A :: C :: Nil, A :: D :: Nil, B :: B :: Nil, B :: C :: Nil, B :: D :: Nil, C :: B :: Nil, C :: C :: Nil, C :: D :: Nil, D :: B :: Nil, D :: C :: Nil, D :: D :: Nil}, Unconnected -> Set#{A :: A :: Nil, B :: A :: Nil, C :: A :: Nil, D :: A :: Nil}, Vertex -> Set#{A :: Nil, B :: Nil, C :: Nil, D :: Nil}}"
+    "Model#{AntiSymmetric#{(A, D), (A, C), (A, B)}, Edge#{(D, B), (C, D), (B, C), (A, B)}, Path#{(D, D), (D, C), (D, B), (C, D), (C, C), (C, B), (B, D), (B, C), (B, B), (A, D), (A, C), (A, B)}, Unconnected#{(D, A), (C, A), (B, A), (A, A)}, Vertex#{D, C, B, A}}"

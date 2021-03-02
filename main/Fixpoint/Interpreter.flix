@@ -20,14 +20,16 @@ namespace Fixpoint {
     type alias Tuple[v] = List[v]
     type alias Database[v] = MutMap[RelSym, MutSet[Tuple[v]]]
     type alias SearchEnv[v] = Map[RowVar, Tuple[v]]
+    opaque type Model[v] = Map[String, Set[List[v]]]
 
-    pub def interpret[v : Order : Eq](stmt: RamStmt[v]): Map[String, Set[List[v]]] & Impure =
+    pub def interpret[v : Order : Eq](stmt: RamStmt[v]): Model[v] & Impure =
         let db = MutMap.empty();
         evalStmt(db, stmt);
         MutMap.foldLeftWithKey(acc -> k -> v -> match k {
             case RelSym.Full(relName) => Map.insert(relName, MutSet.toImmutable(v), acc)
             case _ => acc
-        }, Map#{}, db)
+        }, Map#{}, db) |>
+        Model
 
     def evalStmt[v : Order : Eq](db: Database[v], stmt: RamStmt[v]): Unit & Impure = match stmt {
         case RamStmt.Insert(relOp) => evalOp(db, Map#{}, relOp)
@@ -99,5 +101,27 @@ namespace Fixpoint {
         case (v :: vs, 0) => v
         case (v :: vs, _) => tupleGet(i - 1, vs)
         case _ => ??? // Index out of bounds
+    }
+
+    instance ToString[Model[v]] with [v : ToString] {
+        def toString(model: Model[v]): String = match model {
+            case Model(db) =>
+                let relations =
+                    Map.mapWithKey(k -> v -> {
+                        let relation =
+                            Set.map(tuple -> match List.map(ToString.toString, tuple) {
+                                case x :: Nil => x
+                                case ts =>
+                                    let xs = String.intercalate(", ", ts);
+                                    "(${xs})"
+                            }, v) |>
+                            Set.toList |>
+                            String.intercalate(", ");
+                        "${k}#{${relation}}"
+                    }, db) |>
+                    Map.valuesOf |>
+                    String.intercalate(", ");
+                "Model#{${relations}}"
+        }
     }
 }
