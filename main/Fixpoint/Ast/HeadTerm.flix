@@ -24,7 +24,7 @@ namespace Fixpoint/Ast {
         def toString(term: HeadTerm[v]): String = match term {
             case HeadTerm.Var(varSym, _) => ToString.toString(varSym)
             case HeadTerm.Lit(v, _) => ToString.toString(v)
-            case HeadTerm.App(_, t, _) => "f(" + ToString.toString(t) + ")"
+            case HeadTerm.App(_, t, _) => "f(${t})"
         }
     }
 }

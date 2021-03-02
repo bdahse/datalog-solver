@@ -32,9 +32,8 @@ namespace Fixpoint/Ast {
     instance ToString[HeadPredicate[v]] with [v : ToString] {
         def toString(head: HeadPredicate[v]): String = match head {
             case HeadAtom(predSym, terms, _) =>
-                use ToString.toString;
-                let ts = List.map(toString, terms) |> String.intercalate(", ");
-                toString(predSym) + "(" + ts + ")"
+                let ts = List.map(ToString.toString, terms) |> String.intercalate(", ");
+                "${predSym}(${ts})"
         }
     }
 }

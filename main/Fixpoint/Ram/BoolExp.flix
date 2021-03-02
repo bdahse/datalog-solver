@@ -24,19 +24,17 @@ namespace Fixpoint/Ram {
     }
 
     instance ToString[BoolExp[v]] with [v : ToString] {
-        def toString(exp: BoolExp[v]): String =
-            use ToString.toString;
-            match exp {
-                case Empty(relSym) => toString(relSym) + " = ∅"
-                case MemberOf(terms, relSym) =>
-                    let tuple = List.map(toString, terms) |> String.intercalate(", ");
-                    "(" + tuple + ") ∈ " + toString(relSym)
-                case Eq(lhs, rhs) => toString(lhs) + " = " + toString(rhs)
-                case Not(MemberOf(terms, relSym)) =>
-                    let tuple = List.map(toString, terms) |> String.intercalate(", ");
-                    "(" + tuple + ") ∉ " + toString(relSym)
-                case Not(e) => "not(" + toString(e) + ")"
-                case And(lhs, rhs) => toString(lhs) + " and " + toString(rhs)
-            }
+        def toString(exp: BoolExp[v]): String = match exp {
+            case Empty(relSym) => "${relSym} = ∅"
+            case MemberOf(terms, relSym) =>
+                let tuple = List.map(ToString.toString, terms) |> String.intercalate(", ");
+                "(${tuple}) ∈ ${relSym}"
+            case Eq(lhs, rhs) => "${lhs} = ${rhs}"
+            case Not(MemberOf(terms, relSym)) =>
+                let tuple = List.map(ToString.toString, terms) |> String.intercalate(", ");
+                "(${tuple}) ∉ ${relSym}"
+            case Not(e) => "not(${e})"
+            case And(lhs, rhs) => "${lhs} and ${rhs}"
+        }
     }
 }

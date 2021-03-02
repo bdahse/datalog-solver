@@ -38,19 +38,16 @@ namespace Fixpoint/Ram {
 
     instance ToString[RamStmt[v]] with [v : ToString] {
         def toString(stmt: RamStmt[v]): String =
-            use ToString.toString;
             let nl = String.lineSeparator();
             match stmt {
-                case Insert(op) => toString(op)
-                case Merge(src, dst) => "merge " + toString(src) + " into " + toString(dst)
-                case Assign(lhs, rhs) => toString(lhs) + " := " + toString(rhs)
-                case Purge(relSym) => "purge " + toString(relSym)
-                case Seq(xs) => List.map(toString, xs) |> String.intercalate(";" + nl)
+                case Insert(op) => ToString.toString(op)
+                case Merge(src, dst) => "merge ${src} into ${dst}"
+                case Assign(lhs, rhs) => "${lhs} := ${rhs}"
+                case Purge(relSym) => "purge ${relSym}"
+                case Seq(xs) => List.map(ToString.toString, xs) |> String.intercalate(";${nl}")
                 case While(test, body) =>
-                    "while(" + toString(test) + ") do" + nl +
-                        String.indent(4, toString(body)) +
-                    "end"
-                case Comment(comment) => "// " + comment
+                    "while(${test}) do${nl}${String.indent(4, "${body}")}end"
+                case Comment(comment) => "// ${comment}"
             }
     }
 }

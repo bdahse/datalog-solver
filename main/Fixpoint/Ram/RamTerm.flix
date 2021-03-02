@@ -21,11 +21,9 @@ namespace Fixpoint/Ram {
     }
 
     instance ToString[RamTerm[v]] with [v : ToString] {
-        def toString(term: RamTerm[v]): String =
-            use ToString.toString;
-            match term {
-                case Lit(v) => toString(v)
-                case Attribute(var, index) => toString(var) + "[" + toString(index) + "]"
-            }
+        def toString(term: RamTerm[v]): String = match term {
+            case Lit(v) => ToString.toString(v)
+            case Attribute(var, index) => "${var}[${index}]"
+        }
     }
 }

@@ -24,8 +24,8 @@ namespace Fixpoint/Ram {
     instance ToString[RelSym] {
         def toString(relSym: RelSym): String = match relSym {
             case Full(name) => name
-            case Delta(name) => "Δ" + name
-            case New(name) => "Δ" + name + "'"
+            case Delta(name) => "Δ${name}"
+            case New(name) => "Δ${name}'"
         }
     }
 
