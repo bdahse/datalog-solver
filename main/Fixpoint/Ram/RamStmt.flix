@@ -22,6 +22,7 @@ namespace Fixpoint/Ram {
         case Purge(RelSym)
         case Seq(List[RamStmt[v]])
         case While(BoolExp[v], RamStmt[v])
+        case Comment(String)
     }
 
     instance Monoid[RamStmt[v]] {
@@ -33,5 +34,20 @@ namespace Fixpoint/Ram {
             case (RamStmt.Seq(xs), y) => RamStmt.Seq(xs ::: y :: Nil)
             case _ => RamStmt.Seq(x :: y :: Nil)
         }
+    }
+
+    instance ToString[RamStmt[v]] with [v : ToString] {
+        def toString(stmt: RamStmt[v]): String =
+            let nl = String.lineSeparator();
+            match stmt {
+                case Insert(op) => ToString.toString(op)
+                case Merge(src, dst) => "merge ${src} into ${dst}"
+                case Assign(lhs, rhs) => "${lhs} := ${rhs}"
+                case Purge(relSym) => "purge ${relSym}"
+                case Seq(xs) => List.map(ToString.toString, xs) |> String.intercalate(";${nl}")
+                case While(test, body) =>
+                    "while(${test}) do${nl}${String.indent(4, "${body}")}end"
+                case Comment(comment) => "// ${comment}"
+            }
     }
 }

@@ -19,4 +19,18 @@ namespace Fixpoint/Ram {
         case Search(RowVar, RelSym, Option[BoolExp[v]], RelOp[v])
         case Project(List[RamTerm[v]], RelSym)
     }
+
+    instance ToString[RelOp[v]] with [v : ToString] {
+        def toString(op: RelOp[v]): String =
+            let nl = String.lineSeparator();
+            match op {
+                case Search(var, relSym, Some(cond), body) =>
+                    "search ${var} ∈ ${relSym} where${nl}${String.indent(4, "${cond}")}do${nl}${String.indent(4, "${body}")}end"
+                case Search(var, relSym, None, body) =>
+                    "search ${var} ∈ ${relSym} do${nl}${String.indent(4, "${body}")}end"
+                case Project(terms, relSym) =>
+                    let tuple = List.map(ToString.toString, terms) |> String.intercalate(", ");
+                    "project (${tuple}) into ${relSym}"
+            }
+    }
 }

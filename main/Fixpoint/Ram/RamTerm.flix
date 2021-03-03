@@ -19,4 +19,11 @@ namespace Fixpoint/Ram {
         case Lit(v)
         case Attribute(RowVar, Int32)
     }
+
+    instance ToString[RamTerm[v]] with [v : ToString] {
+        def toString(term: RamTerm[v]): String = match term {
+            case Lit(v) => ToString.toString(v)
+            case Attribute(var, index) => "${var}[${index}]"
+        }
+    }
 }

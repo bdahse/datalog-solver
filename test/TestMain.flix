@@ -22,9 +22,10 @@ use Fixpoint/Ast.Polarity.{Positive, Negative};
 use Fixpoint/Ast.SourceLocation.Unknown;
 use Fixpoint/Ast.PredSym.PredSym;
 use Fixpoint/Ast.VarSym.VarSym;
+use Fixpoint.{compile, interpret};
+use ToString.toString;
 
-@test
-pub def test01(): List[Constraint[String]] =
+pub def prog01(): List[Constraint[String]] =
     /// Rich("Magnus").
     /// Age(34).
     /// Rich("Joakim").
@@ -56,11 +57,11 @@ pub def test01(): List[Constraint[String]] =
                             Unknown);
     fact1 :: fact2 :: fact3 :: fact4 :: rule1 :: Nil
 
-@test
-pub def test02() : List[Constraint[String]] =
+pub def prog02(): List[Constraint[String]] =
     /// Edge(A, B).
     /// Edge(B, C).
     /// Edge(C, D).
+    /// Edge(D, B).
     /// Vertex(x) :- Edge(x, _).
     /// Vertex(y) :- Edge(_, y).
     /// Path(x, y) :- Edge(x, y).
@@ -78,6 +79,10 @@ pub def test02() : List[Constraint[String]] =
     let fact3 = Constraint(HeadAtom(PredSym("Edge", Unknown),
                                     HeadTerm.Lit("C", Unknown) ::
                                     HeadTerm.Lit("D", Unknown) :: Nil, Unknown),
+                            Nil, Unknown);
+    let fact4 = Constraint(HeadAtom(PredSym("Edge", Unknown),
+                                    HeadTerm.Lit("D", Unknown) ::
+                                    HeadTerm.Lit("B", Unknown) :: Nil, Unknown),
                             Nil, Unknown);
     let rule1 = Constraint(HeadAtom(PredSym("Vertex", Unknown),
                                     HeadTerm.Var(VarSym("x", Unknown), Unknown) :: Nil,
@@ -155,4 +160,23 @@ pub def test02() : List[Constraint[String]] =
                                     BodyTerm.Var(VarSym("x", Unknown), Unknown) :: Nil,
                                     Unknown) :: Nil,
                             Unknown);
-    fact1 :: fact2 :: fact3 :: rule1 :: rule2 :: rule3 :: rule4 :: rule5 :: rule6 :: Nil
+    fact1 :: fact2 :: fact3 :: fact4 :: rule1 :: rule2 :: rule3 :: rule4 :: rule5 :: rule6 :: Nil
+
+@test
+pub def test01(): Bool & Impure =
+    let strat = Map#{
+        PredSym("Happy", Unknown) -> 0
+    };
+    toString(compile(strat, prog01()) |> interpret) ==
+    "Model#{Age#{34}, Famous#{Joakim}, Happy#{Joakim}, Rich#{Magnus, Joakim}}"
+
+@test
+pub def test02() : Bool & Impure =
+    let strat = Map#{
+        PredSym("Vertex", Unknown) -> 0,
+        PredSym("Path", Unknown) -> 0,
+        PredSym("Unconnected", Unknown) -> 1,
+        PredSym("AntiSymmetric", Unknown) -> 1
+    };
+    toString(compile(strat, prog02()) |> interpret) ==
+    "Model#{AntiSymmetric#{(A, D), (A, C), (A, B)}, Edge#{(D, B), (C, D), (B, C), (A, B)}, Path#{(D, D), (D, C), (D, B), (C, D), (C, C), (C, B), (B, D), (B, C), (B, B), (A, D), (A, C), (A, B)}, Unconnected#{(D, A), (C, A), (B, A), (A, A)}, Vertex#{D, C, B, A}}"

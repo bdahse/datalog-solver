@@ -18,6 +18,12 @@ namespace Fixpoint/Ast {
         case PredSym(String, SourceLocation)
     }
 
+    instance ToString[PredSym] {
+        def toString(predSym: PredSym): String = match predSym {
+            case PredSym(name, _) => name
+        }
+    }
+
     instance Order[PredSym] {
 
         def less(a: PredSym, b: PredSym): Bool = match a <=> b {

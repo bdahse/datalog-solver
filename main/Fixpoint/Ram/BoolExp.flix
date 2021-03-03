@@ -22,4 +22,19 @@ namespace Fixpoint/Ram {
         case Not(BoolExp[v])
         case And(BoolExp[v], BoolExp[v])
     }
+
+    instance ToString[BoolExp[v]] with [v : ToString] {
+        def toString(exp: BoolExp[v]): String = match exp {
+            case Empty(relSym) => "${relSym} = ∅"
+            case MemberOf(terms, relSym) =>
+                let tuple = List.map(ToString.toString, terms) |> String.intercalate(", ");
+                "(${tuple}) ∈ ${relSym}"
+            case Eq(lhs, rhs) => "${lhs} = ${rhs}"
+            case Not(MemberOf(terms, relSym)) =>
+                let tuple = List.map(ToString.toString, terms) |> String.intercalate(", ");
+                "(${tuple}) ∉ ${relSym}"
+            case Not(e) => "not(${e})"
+            case And(lhs, rhs) => "${lhs} and ${rhs}"
+        }
+    }
 }

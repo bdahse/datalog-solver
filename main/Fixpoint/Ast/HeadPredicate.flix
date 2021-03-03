@@ -28,4 +28,12 @@ namespace Fixpoint/Ast {
             case HeadTerm.App(_, term, _) => Set.union(acc, htermVars(term :: Nil))
             case HeadTerm.Lit(_, _) => acc
         }, Set.empty(), terms)
+
+    instance ToString[HeadPredicate[v]] with [v : ToString] {
+        def toString(head: HeadPredicate[v]): String = match head {
+            case HeadAtom(predSym, terms, _) =>
+                let ts = List.map(ToString.toString, terms) |> String.intercalate(", ");
+                "${predSym}(${ts})"
+        }
+    }
 }
