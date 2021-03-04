@@ -52,28 +52,51 @@ namespace Fixpoint {
         case RamStmt.Comment(_) => ()
     }
 
-    def evalOp[v : Order : Eq](db: Database[v], env: SearchEnv[v], op: RelOp[v]): Unit & Impure = match op {
-        case RelOp.Search(rowVar, relSym, None, body) =>
-            db |>
-            MutMap.getWithDefault(relSym, MutSet.empty()) |>
-            MutSet.foreach(row -> evalOp(db, Map.insert(rowVar, row, env), body))
-        case RelOp.Search(rowVar, relSym, Some(searchCond), body) =>
-            db |>
-            MutMap.getWithDefault(relSym, MutSet.empty()) |>
-            MutSet.foreach(row -> {
-                let env = Map.insert(rowVar, row, env);
-                if (evalBoolExp(db, env, searchCond)) {
-                    evalOp(db, env, body)
-                } else {
-                    ()
-                }
-            })
-        case RelOp.Project(terms, relSym) =>
-            let tuple = List.map(evalTerm(env), terms);
-            db |>
-            MutMap.getOrElsePut!(relSym, MutSet.empty()) |>
-            MutSet.add!(tuple)
-    }
+    def evalOp[v : Order : Eq](db: Database[v], env: SearchEnv[v], op: RelOp[v]): Unit & Impure =
+        match op {
+            case RelOp.Search(rowVar, relSym, None, body) =>
+                MutMap.getWithDefault(relSym, MutSet.empty(), db) |>
+                MutSet.foreach(row -> evalOp(db, Map.insert(rowVar, row, env), body))
+            case RelOp.Search(rowVar, relSym, Some(where), body) =>
+                MutMap.getWithDefault(relSym, MutSet.empty(), db) |>
+                MutSet.foreach(row -> {
+                    let env = Map.insert(rowVar, row, env);
+                    if (evalBoolExp(db, env, where)) {
+                        evalOp(db, env, body)
+                    } else {
+                        ()
+                    }
+                })
+            case RelOp.Query(rowVar, relSym, query, None, body) =>
+                MutMap.getWithDefault(relSym, MutSet.empty(), db) |>
+                MutSet.query(evalQuery(env, query)) |>
+                List.foreach(row -> evalOp(db, Map.insert(rowVar, row, env), body))
+            case RelOp.Query(rowVar, relSym, query, Some(where), body) =>
+                MutMap.getWithDefault(relSym, MutSet.empty(), db) |>
+                MutSet.query(evalQuery(env, query)) |>
+                List.foreach(row -> {
+                    let env = Map.insert(rowVar, row, env);
+                    if (evalBoolExp(db, env, where)) {
+                        evalOp(db, env, body)
+                    } else {
+                        ()
+                    }
+                })
+            case RelOp.Project(terms, relSym) =>
+                let tuple = List.map(evalTerm(env), terms);
+                MutMap.getOrElsePut!(relSym, MutSet.empty(), db) |>
+                MutSet.add!(tuple)
+        }
+
+    def evalQuery[v : Order](env: SearchEnv[v], query: List[RamTerm[v]], tuple: List[v]): Comparison =
+        match (tuple, query) {
+            case (_, Nil) => EqualTo
+            case (v :: vs, t :: ts) => match v <=> evalTerm(env, t) {
+                case EqualTo => evalQuery(env, ts, vs)
+                case cmp => cmp
+            }
+            case _ => ??? // Impossible
+        }
 
     def evalBoolExp[v : Order : Eq](db: Database[v], env: SearchEnv[v], exp: BoolExp[v]): Bool & Impure =
         match exp {

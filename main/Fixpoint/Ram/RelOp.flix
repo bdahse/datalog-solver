@@ -17,6 +17,7 @@
 namespace Fixpoint/Ram {
     pub enum RelOp[v] {
         case Search(RowVar, RelSym, Option[BoolExp[v]], RelOp[v])
+        case Query(RowVar, RelSym, List[RamTerm[v]], Option[BoolExp[v]], RelOp[v])
         case Project(List[RamTerm[v]], RelSym)
     }
 
@@ -24,10 +25,24 @@ namespace Fixpoint/Ram {
         def toString(op: RelOp[v]): String =
             let nl = String.lineSeparator();
             match op {
-                case Search(var, relSym, Some(cond), body) =>
-                    "search ${var} ∈ ${relSym} where${nl}${String.indent(4, "${cond}")}do${nl}${String.indent(4, "${body}")}end"
+                case Search(var, relSym, Some(where), body) =>
+                    "search ${var} ∈ ${relSym} where${nl}${String.indent(4, "${where}")}do${nl}${String.indent(4, "${body}")}end"
                 case Search(var, relSym, None, body) =>
                     "search ${var} ∈ ${relSym} do${nl}${String.indent(4, "${body}")}end"
+                case Query(var, relSym, rangeQuery, Some(where), body) =>
+                    let query =
+                        List.mapWithIndex(term -> i -> {
+                            ToString.toString(BoolExp.Eq(RamTerm.Attribute(var, i), term))
+                        }, rangeQuery) |>
+                        String.intercalate(" ∧ ");
+                    "query {${var} ∈ ${relSym} | ${query}} where${nl}${String.indent(4, "${where}")}do${nl}${String.indent(4, "${body}")}end"
+                case Query(var, relSym, rangeQuery, None, body) =>
+                    let query =
+                        List.mapWithIndex(term -> i -> {
+                            ToString.toString(BoolExp.Eq(RamTerm.Attribute(var, i), term))
+                        }, rangeQuery) |>
+                        String.intercalate(" ∧ ");
+                    "query {${var} ∈ ${relSym} | ${query}} do${nl}${String.indent(4, "${body}")}end"
                 case Project(terms, relSym) =>
                     let tuple = List.map(ToString.toString, terms) |> String.intercalate(", ");
                     "project (${tuple}) into ${relSym}"

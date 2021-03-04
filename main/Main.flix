@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-use Fixpoint.{compile, interpret};
+use Fixpoint.{compile, interpret, hoistStmt, queryStmt};
 use Fixpoint/Ast.{HeadTerm, BodyTerm, Polarity};
 use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
@@ -63,6 +63,8 @@ pub def benchmark(): Unit & Impure =
                             Unknown);
     Map#{PredSym("Path", Unknown) -> 0} |>
     compile(rule1 :: rule2 :: facts) |>
+    hoistStmt |>
+    queryStmt |>
     interpret |>
     println
 

@@ -171,7 +171,7 @@ namespace Fixpoint {
             case BodyAtom(_, Polarity.Positive, terms, _) =>
                 List.mapWithIndex(term -> j -> {
                     let ramTerm = compileBodyTerm(env, term);
-                    BoolExp.Eq(ramTerm, RamTerm.Attribute(rowVar, j))
+                    BoolExp.Eq(RamTerm.Attribute(rowVar, j), ramTerm)
                 }, terms)
             case BodyAtom(PredSym(relName, _), Polarity.Negative, terms, _) =>
                 let ramTerms = List.map(compileBodyTerm(env), terms);
