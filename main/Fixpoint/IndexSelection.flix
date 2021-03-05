@@ -82,33 +82,33 @@ namespace Fixpoint {
     }
 
     def queryOp[v : ToString](op: RelOp[v]): RelOp[v] = match op {
-        case RelOp.Search(var, relSym, None, body) => RelOp.Search(var, relSym, None, queryOp(body))
+        case RelOp.Search(var, relSym, None, body) =>
+            RelOp.Search(var, relSym, None, queryOp(body))
         case RelOp.Search(var, relSym, Some(where), body) =>
-            let varEqs =
+            use Fixpoint/Ram.BoolExp.Eq;
+            use Fixpoint/Ram.RamTerm.{Attribute, Lit};
+            let (attributeQuery, rest1) =
                 flattenBoolExp(where) |>
-                List.filter(exp -> match exp {
-                    case BoolExp.Eq(RamTerm.Attribute(row1, _), RamTerm.Attribute(row2, _)) =>
+                List.partition(exp -> match exp {
+                    case Eq(Attribute(row1, _), Attribute(row2, _)) =>
                         row1 != row2 and row1 == var
-                    case BoolExp.Eq(RamTerm.Attribute(row, _), RamTerm.Lit(_)) => row == var
+                    case Eq(Attribute(row, _), Lit(_)) => row == var
                     case _ => false
                 });
-            let rangeQuery =
-                List.unfold(i -> {
-                    List.findMap(eq -> match eq {
-                        case BoolExp.Eq(RamTerm.Attribute(_, index), rhs) =>
-                            if (i == index) {
-                                Some(rhs)
-                            } else {
-                                None
-                            }
-                        case _ => None
-                    }, varEqs) |>
-                    Option.map(term -> (term, i + 1))
-                }, 0);
-            if (List.isEmpty(rangeQuery))
+            let (prefixQuery, rest2) =
+                List.sortWith(x -> y -> match (x, y) {
+                    case (Eq(Attribute(_, index1), _), Eq(Attribute(_, index2), _)) =>
+                        index1 - index2
+                }, attributeQuery) |>
+                List.mapWithIndex(x -> i -> (x, i)) |>
+                List.partition(match (Eq(Attribute(_, index), _), i) -> index == i) |>
+                match (prefixQuery, rest) ->
+                    (List.map(match (Eq(_, rhs), _) -> rhs, prefixQuery), List.map(fst, rest));
+            if (List.isEmpty(prefixQuery))
                 RelOp.Search(var, relSym, Some(where), queryOp(body))
             else
-                RelOp.Query(var, relSym, rangeQuery, Some(where), queryOp(body))
+                let where = List.reduceLeft(lhs -> rhs -> BoolExp.And(lhs, rhs), rest1 ::: rest2);
+                RelOp.Query(var, relSym, prefixQuery, where, queryOp(body))
         case RelOp.Query(_, _, _, _, _) => op
         case RelOp.Project(_, _) => op
     }
