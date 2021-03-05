@@ -96,7 +96,9 @@ namespace Fixpoint {
     def evalTerm(env: SearchEnv[v], term: RamTerm[v]): v = match term {
         case RamTerm.Lit(v) => v
         case RamTerm.Attribute(rowVar, index) =>
-            env |> Map.getWithDefault(rowVar, Nil) |> tupleGet(index)
+            Map.getWithDefault(rowVar, Nil, env) |> tupleGet(index)
+        case RamTerm.App(f, args) =>
+            List.map(evalTerm(env), args) |> f
     }
 
     def tupleGet(i: Int32, t: Tuple[v]): v = match (t, i) {

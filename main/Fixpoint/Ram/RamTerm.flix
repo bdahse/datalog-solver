@@ -18,12 +18,16 @@ namespace Fixpoint/Ram {
     pub enum RamTerm[v] {
         case Lit(v)
         case Attribute(RowVar, Int32)
+        case App(List[v] -> v, List[RamTerm[v]])
     }
 
     instance ToString[RamTerm[v]] with [v : ToString] {
         def toString(term: RamTerm[v]): String = match term {
             case Lit(v) => ToString.toString(v)
             case Attribute(var, index) => "${var}[${index}]"
+            case App(f, args) =>
+                let args = List.map(ToString.toString, args) |> String.intercalate(", ");
+                "f(${args})"
         }
     }
 }

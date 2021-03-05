@@ -25,7 +25,7 @@ namespace Fixpoint/Ast {
     def htermVars[v](terms: List[HeadTerm[v]]): Set[VarSym] =
         List.foldLeft((acc, t) -> match t {
             case HeadTerm.Var(var, _) => Set.insert(var, acc)
-            case HeadTerm.App(_, term, _) => Set.union(acc, htermVars(term :: Nil))
+            case HeadTerm.App(_, args, _) => Set.union(acc, htermVars(args))
             case HeadTerm.Lit(_, _) => acc
         }, Set.empty(), terms)
 
