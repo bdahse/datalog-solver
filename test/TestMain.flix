@@ -17,7 +17,7 @@
 use Fixpoint/Ast.{Constraint, HeadTerm, BodyTerm};
 use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
-use Fixpoint/Ast.BodyPredicate.BodyAtom;
+use Fixpoint/Ast.BodyPredicate.{BodyAtom, GuardAtom};
 use Fixpoint/Ast.Polarity.{Positive, Negative};
 use Fixpoint/Ast.SourceLocation.Unknown;
 use Fixpoint/Ast.PredSym.PredSym;
@@ -167,7 +167,7 @@ pub def test01(): Bool & Impure =
     let strat = Map#{
         PredSym("Happy", Unknown) -> 0
     };
-    toString(compile(strat, prog01()) |> interpret) ==
+    toString(compile(prog01(), strat) |> interpret) ==
     "Model#{Age#{34}, Famous#{Joakim}, Happy#{Joakim}, Rich#{Magnus, Joakim}}"
 
 @test
@@ -178,5 +178,77 @@ pub def test02() : Bool & Impure =
         PredSym("Unconnected", Unknown) -> 1,
         PredSym("AntiSymmetric", Unknown) -> 1
     };
-    toString(compile(strat, prog02()) |> interpret) ==
+    toString(compile(prog02(), strat) |> interpret) ==
     "Model#{AntiSymmetric#{(A, D), (A, C), (A, B)}, Edge#{(D, B), (C, D), (B, C), (A, B)}, Path#{(D, D), (D, C), (D, B), (C, D), (C, C), (C, B), (B, D), (B, C), (B, B), (A, D), (A, C), (A, B)}, Unconnected#{(D, A), (C, A), (B, A), (A, A)}, Vertex#{D, C, B, A}}"
+
+@test
+pub def test04(): Bool & Impure =
+    /// Edge(A, 80, B).
+    /// Edge(B, 70, C).
+    /// Edge(C, 110, D).
+    /// Edge(D, 50. B).
+    /// Path(x, y) :- Edge(x, speedLimit, y), if speedLimit >= 70.
+    /// Path(x, z) :- Path(x, y), Edge(y, speedLimit, z), if speedLimit >= 70.
+    let f = args -> match args {
+        case x :: Nil => x >= "070"
+        case _ => false
+    };
+    let fact1 = Constraint(HeadAtom(PredSym("Edge", Unknown),
+                                    HeadTerm.Lit("A", Unknown) ::
+                                    HeadTerm.Lit("080", Unknown) ::
+                                    HeadTerm.Lit("B", Unknown) :: Nil, Unknown),
+                            Nil, Unknown);
+    let fact2 = Constraint(HeadAtom(PredSym("Edge", Unknown),
+                                    HeadTerm.Lit("B", Unknown) ::
+                                    HeadTerm.Lit("070", Unknown) ::
+                                    HeadTerm.Lit("C", Unknown) :: Nil, Unknown),
+                            Nil, Unknown);
+    let fact3 = Constraint(HeadAtom(PredSym("Edge", Unknown),
+                                    HeadTerm.Lit("C", Unknown) ::
+                                    HeadTerm.Lit("110", Unknown) ::
+                                    HeadTerm.Lit("D", Unknown) :: Nil, Unknown),
+                            Nil, Unknown);
+    let fact4 = Constraint(HeadAtom(PredSym("Edge", Unknown),
+                                    HeadTerm.Lit("D", Unknown) ::
+                                    HeadTerm.Lit("050", Unknown) ::
+                                    HeadTerm.Lit("B", Unknown) :: Nil, Unknown),
+                            Nil, Unknown);
+    let rule1 = Constraint(HeadAtom(PredSym("Path", Unknown),
+                                    HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
+                                    HeadTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
+                                    Unknown),
+                            BodyAtom(PredSym("Edge", Unknown),
+                                    Positive,
+                                    BodyTerm.Var(VarSym("x", Unknown), Unknown) ::
+                                    BodyTerm.Var(VarSym("speedLimit", Unknown), Unknown) ::
+                                    BodyTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
+                                    Unknown) ::
+                            GuardAtom(f,
+                                    BodyTerm.Var(VarSym("speedLimit", Unknown), Unknown) :: Nil,
+                                    Unknown) :: Nil,
+                            Unknown);
+    let rule2 = Constraint(HeadAtom(PredSym("Path", Unknown),
+                                    HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
+                                    HeadTerm.Var(VarSym("z", Unknown), Unknown) :: Nil,
+                                    Unknown),
+                            BodyAtom(PredSym("Path", Unknown),
+                                    Positive,
+                                    BodyTerm.Var(VarSym("x", Unknown), Unknown) ::
+                                    BodyTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
+                                    Unknown) ::
+                            BodyAtom(PredSym("Edge", Unknown),
+                                    Positive,
+                                    BodyTerm.Var(VarSym("y", Unknown), Unknown) ::
+                                    BodyTerm.Var(VarSym("speedLimit", Unknown), Unknown) ::
+                                    BodyTerm.Var(VarSym("z", Unknown), Unknown) :: Nil,
+                                    Unknown) ::
+                            GuardAtom(f,
+                                    BodyTerm.Var(VarSym("speedLimit", Unknown), Unknown) :: Nil,
+                                    Unknown) :: Nil,
+                            Unknown);
+    Map#{
+        PredSym("Path", Unknown) -> 0
+    } |>
+    compile(fact1 :: fact2 :: fact3 :: fact4 :: rule1 :: rule2 :: Nil) |>
+    interpret |>
+    toString == "Model#{Edge#{(D, 050, B), (C, 110, D), (B, 070, C), (A, 080, B)}, Path#{(C, D), (B, D), (B, C), (A, D), (A, C), (A, B)}}"

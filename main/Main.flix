@@ -18,12 +18,13 @@ def main(_args: Array[String]): Int32 & Impure =
     use Fixpoint.{compile, interpret};
     use Fixpoint/Ast.PredSym.PredSym;
     use Fixpoint/Ast.SourceLocation.Unknown;
-    let strat = Map#{
+    Map#{
         PredSym("Vertex", Unknown) -> 0,
         PredSym("Path", Unknown) -> 0,
         PredSym("Unconnected", Unknown) -> 1,
         PredSym("AntiSymmetric", Unknown) -> 1
-    };
-    prog02() |> compile(strat) |> println;
+    } |>
+    compile(prog02()) |>
+    println;
     123
 

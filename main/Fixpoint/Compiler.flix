@@ -22,7 +22,7 @@ use Fixpoint/Ast.BodyPredicate.{BodyAtom, GuardAtom};
 use Fixpoint/Ast.PredSym.PredSym;
 
 namespace Fixpoint {
-    pub def compile[v : ToString](strat: Map[PredSym, Int32], cs: List[Constraint[v]]): RamStmt[v] =
+    pub def compile[v : ToString](cs: List[Constraint[v]], strat: Map[PredSym, Int32]): RamStmt[v] =
         let facts = facts(cs) |> List.map(compileRule) |> List.fold;
         let strata =
             Map.invert(strat) |>
