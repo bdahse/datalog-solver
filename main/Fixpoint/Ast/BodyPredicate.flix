@@ -17,6 +17,7 @@
 namespace Fixpoint/Ast {
     pub enum BodyPredicate[v] {
         case BodyAtom(PredSym, Polarity, List[BodyTerm[v]], SourceLocation)
+        case GuardAtom(List[v] -> Bool, List[BodyTerm[v]], SourceLocation)
     }
 
     def bodyVars(body: List[BodyPredicate[v]]): Set[VarSym] = match polarityVars(body) {
@@ -27,6 +28,7 @@ namespace Fixpoint/Ast {
         List.foldLeft((acc, bp) -> match (acc, bp) {
             case ((p, n), BodyAtom(_, Positive, terms, _)) => (Set.union(p, btermVars(terms)), n)
             case ((p, n), BodyAtom(_, Negative, terms, _)) => (p, Set.union(n, btermVars(terms)))
+            case (_, GuardAtom(_)) => acc
         }, (Set.empty(), Set.empty()), body)
 
     def btermVars(terms: List[BodyTerm[v]]): Set[VarSym] =
@@ -43,6 +45,9 @@ namespace Fixpoint/Ast {
             case BodyAtom(predSym, Negative, terms, _) =>
                 let ts = List.map(ToString.toString, terms) |> String.intercalate(", ");
                 "not ${predSym}(${ts})"
+            case GuardAtom(_, terms, _) =>
+                let ts = List.map(ToString.toString, terms) |> String.intercalate(", ");
+                "if f(${ts})"
         }
     }
 }

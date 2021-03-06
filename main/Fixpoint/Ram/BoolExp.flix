@@ -18,6 +18,7 @@ namespace Fixpoint/Ram {
     pub enum BoolExp[v] {
         case Empty(RelSym)
         case MemberOf(List[RamTerm[v]], RelSym)
+        case Guard(List[v] -> Bool, List[RamTerm[v]])
         case Eq(RamTerm[v], RamTerm[v])
         case Not(BoolExp[v])
         case And(BoolExp[v], BoolExp[v])
@@ -29,6 +30,9 @@ namespace Fixpoint/Ram {
             case MemberOf(terms, relSym) =>
                 let tuple = List.map(ToString.toString, terms) |> String.intercalate(", ");
                 "(${tuple}) ∈ ${relSym}"
+            case Guard(_, terms) =>
+                let ts = List.map(ToString.toString, terms) |> String.intercalate(", ");
+                "f(${ts})"
             case Eq(lhs, rhs) => "${lhs} = ${rhs}"
             case Not(MemberOf(terms, relSym)) =>
                 let tuple = List.map(ToString.toString, terms) |> String.intercalate(", ");
