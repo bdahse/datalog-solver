@@ -18,11 +18,11 @@ use Fixpoint/Ram.{RamStmt, RelOp, RelSym, RamTerm, BoolExp, RowVar};
 use Fixpoint/Ast.{Constraint, BodyPredicate, BodyTerm, HeadTerm, Polarity, PredSym, VarSym};
 use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
-use Fixpoint/Ast.BodyPredicate.BodyAtom;
+use Fixpoint/Ast.BodyPredicate.{BodyAtom, GuardAtom};
 use Fixpoint/Ast.PredSym.PredSym;
 
 namespace Fixpoint {
-    pub def compile[v : ToString](strat: Map[PredSym, Int32], cs: List[Constraint[v]]): RamStmt[v] =
+    pub def compile[v : ToString](cs: List[Constraint[v]], strat: Map[PredSym, Int32]): RamStmt[v] =
         let facts = facts(cs) |> List.map(compileRule) |> List.fold;
         let strata =
             Map.invert(strat) |>
@@ -77,6 +77,7 @@ namespace Fixpoint {
             let projection = RelOp.Project(ramTerms, RelSym.Full(headPred));
             let insert =
                 List.foldRight(match (atom, rowVar, _) -> match (isLast, acc) -> match atom {
+                    case GuardAtom(_) => (isLast, acc)
                     case BodyAtom(PredSym(pred, _), _, _, _) =>
                         if (isLast)
                             (false, RelOp.Search(rowVar, RelSym.Full(pred), join, acc))
@@ -100,6 +101,7 @@ namespace Fixpoint {
                 let ramTerms = List.map(compileHeadTerm(env), headTerms);
                 let projection = RelOp.Project(ramTerms, RelSym.New(headPred));
                 List.foldRight(match (atom, rowVar, i) -> match (isLast, acc) -> match atom {
+                    case GuardAtom(_) => (isLast, acc)
                     case BodyAtom(PredSym(pred, _), _, _, _) =>
                         let relSym = if (i == delta) {
                             RelSym.Delta(pred)
@@ -136,8 +138,8 @@ namespace Fixpoint {
     /// Augment body atoms with row variables and indices.
     def augmentBody(body: List[BodyPredicate[v]]): List[(BodyPredicate[v], RowVar, Int32)] =
         List.mapWithIndex(atom -> i -> match atom {
-            case BodyAtom(PredSym(pred, _), _, _, _) =>
-                (atom, RowVar.Named(pred + "$" + ToString.toString(i)), i)
+            case GuardAtom(_) => (atom, RowVar.Named("Guard$${i}"), i)
+            case BodyAtom(predSym, _, _, _) => (atom, RowVar.Named("${predSym}$${i}"), i)
         }, body)
 
     /// Return all positive atoms present in body.
@@ -145,12 +147,14 @@ namespace Fixpoint {
         List.filter(match (atom, _, _) -> match atom {
             case BodyAtom(_, Polarity.Positive, _, _) => true
             case BodyAtom(_, Polarity.Negative, _, _) => false
+            case GuardAtom(_) => false
         }, body)
 
     /// Unifies each variable that occurs in a rule body with an attribute
     /// corresponding to a positive atom where the variable is a term.
     def unifyVars(body: List[(BodyPredicate[v], RowVar, Int32)]): Map[VarSym, RamTerm[v]] =
         List.foldLeft(acc -> match (atom, rowVar, _) -> match atom {
+            case GuardAtom(_) => acc
             case BodyAtom(_, Polarity.Negative, _, _) => acc
             case BodyAtom(_, Polarity.Positive, terms, _) =>
                 List.mapWithIndex(term -> j -> match term {
@@ -172,6 +176,8 @@ namespace Fixpoint {
             case BodyAtom(PredSym(relName, _), Polarity.Negative, terms, _) =>
                 let ramTerms = List.map(compileBodyTerm(env), terms);
                 BoolExp.Not(BoolExp.MemberOf(ramTerms, RelSym.Full(relName))) :: Nil
+            case GuardAtom(f, terms, _) =>
+                BoolExp.Guard(f, List.map(compileBodyTerm(env), terms)) :: Nil
         }, body) |>
         List.reduceLeft(lhs -> rhs -> BoolExp.And(lhs, rhs))
 

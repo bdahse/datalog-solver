@@ -75,21 +75,23 @@ namespace Fixpoint {
             MutSet.add!(tuple)
     }
 
-    def evalBoolExp[v : Order : Eq](db: Database[v], env: SearchEnv[v], exp: BoolExp[v]): Bool & Impure = match exp {
-        case BoolExp.Empty(relSym) =>
-            db |> MutMap.getWithDefault(relSym, MutSet.empty()) |> MutSet.isEmpty
-        case BoolExp.MemberOf(terms, relSym) =>
-            let tuple = List.map(evalTerm(env), terms);
-            db |>
-            MutMap.getWithDefault(relSym, MutSet.empty()) |>
-            MutSet.memberOf(tuple)
-        case BoolExp.Eq(lhs, rhs) =>
-            evalTerm(env, lhs) == evalTerm(env, rhs)
-        case BoolExp.Not(e) =>
-            not evalBoolExp(db, env, e)
-        case BoolExp.And(lhs, rhs) =>
-            evalBoolExp(db, env, lhs) and evalBoolExp(db, env, rhs)
-    }
+    def evalBoolExp[v : Order : Eq](db: Database[v], env: SearchEnv[v], exp: BoolExp[v]): Bool & Impure =
+        match exp {
+            case BoolExp.Empty(relSym) =>
+                MutMap.getWithDefault(relSym, MutSet.empty(), db) |> MutSet.isEmpty
+            case BoolExp.MemberOf(terms, relSym) =>
+                let tuple = List.map(evalTerm(env), terms);
+                MutMap.getWithDefault(relSym, MutSet.empty(), db) |>
+                MutSet.memberOf(tuple)
+            case BoolExp.Guard(f, terms) =>
+                List.map(evalTerm(env), terms) |> f
+            case BoolExp.Eq(lhs, rhs) =>
+                evalTerm(env, lhs) == evalTerm(env, rhs)
+            case BoolExp.Not(e) =>
+                not evalBoolExp(db, env, e)
+            case BoolExp.And(lhs, rhs) =>
+                evalBoolExp(db, env, lhs) and evalBoolExp(db, env, rhs)
+        }
 
     def evalTerm(env: SearchEnv[v], term: RamTerm[v]): v = match term {
         case RamTerm.Lit(v) => v
