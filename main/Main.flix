@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Magnus Madsen
+ * Copyright 2021 Benjamin Dahse
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,58 @@
  * limitations under the License.
  */
 
-def main(_args: Array[String]): Int32 & Impure =
-    use Fixpoint.{compile, interpret};
-    use Fixpoint/Ast.PredSym.PredSym;
-    use Fixpoint/Ast.SourceLocation.Unknown;
-    Map#{
-        PredSym("Vertex", Unknown) -> 0,
-        PredSym("Path", Unknown) -> 0,
-        PredSym("Unconnected", Unknown) -> 1,
-        PredSym("AntiSymmetric", Unknown) -> 1
-    } |>
-    compile(prog02()) |>
-    println;
-    123
+use Fixpoint.{compile, interpret};
+use Fixpoint/Ast.{HeadTerm, BodyTerm, Polarity};
+use Fixpoint/Ast.Constraint.Constraint;
+use Fixpoint/Ast.HeadPredicate.HeadAtom;
+use Fixpoint/Ast.BodyPredicate.BodyAtom;
+use Fixpoint/Ast.PredSym.PredSym;
+use Fixpoint/Ast.VarSym.VarSym;
+use Fixpoint/Ast.SourceLocation.Unknown;
 
+pub def benchmark(): Unit & Impure =
+    let rand = Random.nextNatWithMax(Random.new());
+    let facts =
+        List.unfold(i -> if (i < 1000) {
+            let fact =
+                Constraint(HeadAtom(PredSym("Edge", Unknown),
+                                    HeadTerm.Lit(ToString.toString(rand(1000)), Unknown) ::
+                                    HeadTerm.Lit(ToString.toString(rand(1000)), Unknown) :: Nil, Unknown),
+                            Nil, Unknown);
+            Some((fact, i+1))
+        } else {
+            None
+        }, 0);
+    let rule1 = Constraint(HeadAtom(PredSym("Path", Unknown),
+                                    HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
+                                    HeadTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
+                                    Unknown),
+                            BodyAtom(PredSym("Edge", Unknown),
+                                    Polarity.Positive,
+                                    BodyTerm.Var(VarSym("x", Unknown), Unknown) ::
+                                    BodyTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
+                                    Unknown) :: Nil,
+                            Unknown);
+    let rule2 = Constraint(HeadAtom(PredSym("Path", Unknown),
+                                    HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
+                                    HeadTerm.Var(VarSym("z", Unknown), Unknown) :: Nil,
+                                    Unknown),
+                            BodyAtom(PredSym("Path", Unknown),
+                                    Polarity.Positive,
+                                    BodyTerm.Var(VarSym("x", Unknown), Unknown) ::
+                                    BodyTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
+                                    Unknown) ::
+                            BodyAtom(PredSym("Edge", Unknown),
+                                    Polarity.Positive,
+                                    BodyTerm.Var(VarSym("y", Unknown), Unknown) ::
+                                    BodyTerm.Var(VarSym("z", Unknown), Unknown) :: Nil,
+                                    Unknown) :: Nil,
+                            Unknown);
+    Map#{PredSym("Path", Unknown) -> 0} |>
+    compile(rule1 :: rule2 :: facts) |>
+    interpret |>
+    println
+
+def main(_args: Array[String]): Int32 & Impure =
+    benchmark();
+    0

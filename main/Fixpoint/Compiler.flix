@@ -127,7 +127,7 @@ namespace Fixpoint {
     def compileHeadTerm(env: Map[VarSym, RamTerm[v]], term: HeadTerm[v]): RamTerm[v] = match term {
         case HeadTerm.Var(var, _) => env |> Map.get(var) |> unwrap
         case HeadTerm.Lit(v, _) => RamTerm.Lit(v)
-        case HeadTerm.App(_, _, _) => ??? // TODO: How to handle this?
+        case HeadTerm.App(f, args, _) => RamTerm.App(f, List.map(compileHeadTerm(env), args))
     }
 
     def compileBodyTerm(env: Map[VarSym, RamTerm[v]], term: BodyTerm[v]): RamTerm[v] = match term {

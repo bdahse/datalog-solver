@@ -25,7 +25,8 @@ use Fixpoint/Ast.VarSym.VarSym;
 use Fixpoint.{compile, interpret};
 use ToString.toString;
 
-pub def prog01(): List[Constraint[String]] =
+@test
+pub def test01(): Bool & Impure =
     /// Rich("Magnus").
     /// Age(34).
     /// Rich("Joakim").
@@ -55,9 +56,13 @@ pub def prog01(): List[Constraint[String]] =
                                     BodyTerm.Var(VarSym("person", Unknown), Unknown) :: Nil,
                                     Unknown) :: Nil,
                             Unknown);
-    fact1 :: fact2 :: fact3 :: fact4 :: rule1 :: Nil
+	Map#{PredSym("Happy", Unknown) -> 0} |>
+    compile(fact1 :: fact2 :: fact3 :: fact4 :: rule1 :: Nil) |>
+    interpret |>
+    toString == "Model#{Age#{34}, Famous#{Joakim}, Happy#{Joakim}, Rich#{Magnus, Joakim}}"
 
-pub def prog02(): List[Constraint[String]] =
+@test
+pub def test02() : Bool & Impure =
     /// Edge(A, B).
     /// Edge(B, C).
     /// Edge(C, D).
@@ -160,26 +165,68 @@ pub def prog02(): List[Constraint[String]] =
                                     BodyTerm.Var(VarSym("x", Unknown), Unknown) :: Nil,
                                     Unknown) :: Nil,
                             Unknown);
-    fact1 :: fact2 :: fact3 :: fact4 :: rule1 :: rule2 :: rule3 :: rule4 :: rule5 :: rule6 :: Nil
-
-@test
-pub def test01(): Bool & Impure =
-    let strat = Map#{
-        PredSym("Happy", Unknown) -> 0
-    };
-    toString(compile(prog01(), strat) |> interpret) ==
-    "Model#{Age#{34}, Famous#{Joakim}, Happy#{Joakim}, Rich#{Magnus, Joakim}}"
-
-@test
-pub def test02() : Bool & Impure =
-    let strat = Map#{
+	Map#{
         PredSym("Vertex", Unknown) -> 0,
         PredSym("Path", Unknown) -> 0,
         PredSym("Unconnected", Unknown) -> 1,
         PredSym("AntiSymmetric", Unknown) -> 1
+    } |>
+    compile(fact1 :: fact2 :: fact3 :: fact4 :: rule1 :: rule2 :: rule3 :: rule4 :: rule5 :: rule6 :: Nil) |>
+    interpret |>
+    toString == "Model#{AntiSymmetric#{(A, D), (A, C), (A, B)}, Edge#{(D, B), (C, D), (B, C), (A, B)}, Path#{(D, D), (D, C), (D, B), (C, D), (C, C), (C, B), (B, D), (B, C), (B, B), (A, D), (A, C), (A, B)}, Unconnected#{(D, A), (C, A), (B, A), (A, A)}, Vertex#{D, C, B, A}}"
+
+@test
+pub def test03(): Bool & Impure =
+    /// Number(2).
+    /// Number(3).
+    /// Number(5).
+    /// Number(7).
+    /// Sum(f(x, 0)) :- Number(x).
+    /// Sum(f(x, y)) :- Number(x), Number(y).
+    let f = args -> match args {
+        case x :: y :: Nil => "${x} + ${y}"
+        case _ => "0"
     };
-    toString(compile(prog02(), strat) |> interpret) ==
-    "Model#{AntiSymmetric#{(A, D), (A, C), (A, B)}, Edge#{(D, B), (C, D), (B, C), (A, B)}, Path#{(D, D), (D, C), (D, B), (C, D), (C, C), (C, B), (B, D), (B, C), (B, B), (A, D), (A, C), (A, B)}, Unconnected#{(D, A), (C, A), (B, A), (A, A)}, Vertex#{D, C, B, A}}"
+    let fact1 = Constraint(HeadAtom(PredSym("Number", Unknown),
+                                    HeadTerm.Lit("2", Unknown) :: Nil, Unknown),
+                            Nil, Unknown);
+    let fact2 = Constraint(HeadAtom(PredSym("Number", Unknown),
+                                    HeadTerm.Lit("3", Unknown) :: Nil, Unknown),
+                            Nil, Unknown);
+    let fact3 = Constraint(HeadAtom(PredSym("Number", Unknown),
+                                    HeadTerm.Lit("5", Unknown) :: Nil, Unknown),
+                            Nil, Unknown);
+    let fact4 = Constraint(HeadAtom(PredSym("Number", Unknown),
+                                    HeadTerm.Lit("7", Unknown) :: Nil, Unknown),
+                            Nil, Unknown);
+    let rule1 = Constraint(HeadAtom(PredSym("Sum", Unknown),
+                                    HeadTerm.App(f, HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
+                                                    HeadTerm.Lit("0", Unknown) :: Nil,
+                                                Unknown) :: Nil,
+                                    Unknown),
+                            BodyAtom(PredSym("Number", Unknown),
+                                    Positive,
+                                    BodyTerm.Var(VarSym("x", Unknown), Unknown) :: Nil,
+                                    Unknown) :: Nil,
+                            Unknown);
+    let rule2 = Constraint(HeadAtom(PredSym("Sum", Unknown),
+                                    HeadTerm.App(f, HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
+                                                    HeadTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
+                                                Unknown) :: Nil,
+                                    Unknown),
+                            BodyAtom(PredSym("Number", Unknown),
+                                    Positive,
+                                    BodyTerm.Var(VarSym("x", Unknown), Unknown) :: Nil,
+                                    Unknown) ::
+                            BodyAtom(PredSym("Number", Unknown),
+                                    Positive,
+                                    BodyTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
+                                    Unknown) :: Nil,
+                            Unknown);
+	Map#{PredSym("Sum", Unknown) -> 0} |>
+    compile(fact1 :: fact2 :: fact3 :: fact4 :: rule1 :: rule2 :: Nil) |>
+    interpret |>
+    toString == "Model#{Number#{7, 5, 3, 2}, Sum#{7 + 7, 7 + 5, 7 + 3, 7 + 2, 7 + 0, 5 + 7, 5 + 5, 5 + 3, 5 + 2, 5 + 0, 3 + 7, 3 + 5, 3 + 3, 3 + 2, 3 + 0, 2 + 7, 2 + 5, 2 + 3, 2 + 2, 2 + 0}}"
 
 @test
 pub def test04(): Bool & Impure =
@@ -246,9 +293,7 @@ pub def test04(): Bool & Impure =
                                     BodyTerm.Var(VarSym("speedLimit", Unknown), Unknown) :: Nil,
                                     Unknown) :: Nil,
                             Unknown);
-    Map#{
-        PredSym("Path", Unknown) -> 0
-    } |>
+    Map#{PredSym("Path", Unknown) -> 0} |>
     compile(fact1 :: fact2 :: fact3 :: fact4 :: rule1 :: rule2 :: Nil) |>
     interpret |>
     toString == "Model#{Edge#{(D, 050, B), (C, 110, D), (B, 070, C), (A, 080, B)}, Path#{(C, D), (B, D), (B, C), (A, D), (A, C), (A, B)}}"
