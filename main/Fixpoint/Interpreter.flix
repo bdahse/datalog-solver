@@ -20,7 +20,7 @@ namespace Fixpoint {
     type alias Tuple[v] = List[v]
     type alias Database[v] = MutMap[RelSym, MutSet[Tuple[v]]]
     type alias SearchEnv[v] = Map[RowVar, Tuple[v]]
-    opaque type Model[v] = Map[String, Set[List[v]]]
+    pub opaque type Model[v] = Map[String, Set[List[v]]]
 
     pub def interpret[v : Order : Eq](stmt: RamStmt[v]): Model[v] & Impure =
         let db = MutMap.empty();

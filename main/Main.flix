@@ -15,6 +15,7 @@
  */
 
 use Fixpoint.{compile, interpret, hoistStmt, queryStmt};
+use Fixpoint.Model.Model;
 use Fixpoint/Ast.{HeadTerm, BodyTerm, Polarity};
 use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
@@ -61,12 +62,14 @@ pub def benchmark(): Unit & Impure =
                                     BodyTerm.Var(VarSym("z", Unknown), Unknown) :: Nil,
                                     Unknown) :: Nil,
                             Unknown);
-    Map#{PredSym("Path", Unknown) -> 0} |>
-    compile(rule1 :: rule2 :: facts) |>
-    hoistStmt |>
-    queryStmt |>
-    interpret |>
-    println
+    let Model(db) =
+        Map#{PredSym("Path", Unknown) -> 0} |>
+        compile(rule1 :: rule2 :: facts) |>
+        hoistStmt |>
+        queryStmt |>
+        interpret;
+    let path = Map.getWithDefault("Path", Set#{}, db);
+    println("Deduced ${Set.size(path)} facts.")
 
 def main(_args: Array[String]): Int32 & Impure =
     benchmark();
