@@ -42,41 +42,41 @@ namespace Fixpoint {
             MutMap.put!(lhs, MutMap.getWithDefault(rhs, MutSet.empty(), db))
         case RamStmt.Purge(relSym) => MutMap.remove!(relSym, db)
         case RamStmt.Seq(stmts) => List.foreach(evalStmt(db), stmts)
-        case RamStmt.While(test, body) =>
-            if (evalBoolExp(db, Map#{}, test)) {
+        case RamStmt.Until(test, body) =>
+            if (List.forall(evalBoolExp(db, Map#{}) as BoolExp[v] -> Bool, test)) {
+                ()
+            } else {
                 evalStmt(db, body);
                 evalStmt(db, stmt)
-            } else {
-                ()
             }
         case RamStmt.Comment(_) => ()
     }
 
     def evalOp[v : Order : Eq](db: Database[v], env: SearchEnv[v], op: RelOp[v]): Unit & Impure =
         match op {
-            case RelOp.Search(rowVar, relSym, None, body) =>
+            case RelOp.Search(rowVar, relSym, Nil, body) =>
                 MutMap.getWithDefault(relSym, MutSet.empty(), db) |>
                 MutSet.foreach(row -> evalOp(db, Map.insert(rowVar, row, env), body))
-            case RelOp.Search(rowVar, relSym, Some(where), body) =>
+            case RelOp.Search(rowVar, relSym, where, body) =>
                 MutMap.getWithDefault(relSym, MutSet.empty(), db) |>
                 MutSet.foreach(row -> {
                     let env = Map.insert(rowVar, row, env);
-                    if (evalBoolExp(db, env, where)) {
+                    if (List.forall(evalBoolExp(db, env) as BoolExp[v] -> Bool, where)) {
                         evalOp(db, env, body)
                     } else {
                         ()
                     }
                 })
-            case RelOp.Query(rowVar, relSym, query, None, body) =>
+            case RelOp.Query(rowVar, relSym, query, Nil, body) =>
                 MutMap.getWithDefault(relSym, MutSet.empty(), db) |>
                 MutSet.query(evalQuery(env, query)) |>
                 List.foreach(row -> evalOp(db, Map.insert(rowVar, row, env), body))
-            case RelOp.Query(rowVar, relSym, query, Some(where), body) =>
+            case RelOp.Query(rowVar, relSym, query, where, body) =>
                 MutMap.getWithDefault(relSym, MutSet.empty(), db) |>
                 MutSet.query(evalQuery(env, query)) |>
                 List.foreach(row -> {
                     let env = Map.insert(rowVar, row, env);
-                    if (evalBoolExp(db, env, where)) {
+                    if (List.forall(evalBoolExp(db, env) as BoolExp[v] -> Bool, where)) {
                         evalOp(db, env, body)
                     } else {
                         ()
@@ -102,18 +102,16 @@ namespace Fixpoint {
         match exp {
             case BoolExp.Empty(relSym) =>
                 MutMap.getWithDefault(relSym, MutSet.empty(), db) |> MutSet.isEmpty
-            case BoolExp.MemberOf(terms, relSym) =>
-                let tuple = List.map(evalTerm(env), terms);
-                MutMap.getWithDefault(relSym, MutSet.empty(), db) |>
-                MutSet.memberOf(tuple)
+            case BoolExp.NotMemberOf(terms, relSym) => match MutMap.get(relSym, db) {
+                case Some(table) =>
+                    let tuple = List.map(evalTerm(env), terms);
+                    not MutSet.memberOf(tuple, table)
+                case None => true
+            }
             case BoolExp.Guard(f, terms) =>
                 List.map(evalTerm(env), terms) |> f
             case BoolExp.Eq(lhs, rhs) =>
                 evalTerm(env, lhs) == evalTerm(env, rhs)
-            case BoolExp.Not(e) =>
-                not evalBoolExp(db, env, e)
-            case BoolExp.And(lhs, rhs) =>
-                evalBoolExp(db, env, lhs) and evalBoolExp(db, env, rhs)
         }
 
     def evalTerm(env: SearchEnv[v], term: RamTerm[v]): v = match term {

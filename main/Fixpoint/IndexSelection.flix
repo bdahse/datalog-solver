@@ -51,22 +51,17 @@ namespace Fixpoint {
         case RamStmt.Assign(_, _) => stmt
         case RamStmt.Purge(_) => stmt
         case RamStmt.Seq(xs) => RamStmt.Seq(List.map(hoistStmt, xs))
-        case RamStmt.While(test, body) => RamStmt.While(test, hoistStmt(body))
+        case RamStmt.Until(test, body) => RamStmt.Until(test, hoistStmt(body))
         case RamStmt.Comment(_) => stmt
     }
 
     def hoistOp(op: RelOp[v], freeVars: Set[RowVar]): (RelOp[v], List[BoolExp[v]]) = match op {
-        case RelOp.Search(var, relSym, None, body) =>
+        case RelOp.Search(var, relSym, where, body) =>
             let (innerOp, innerGround) = hoistOp(body, Set.insert(var, freeVars));
             let (ground, rest) = List.partition(isExpGround(freeVars), innerGround);
-            let where = List.reduceLeft(lhs -> rhs -> BoolExp.And(rhs, lhs), rest);
-            let search = RelOp.Search(var, relSym, where, innerOp);
-            (search, ground)
-        case RelOp.Search(var, relSym, Some(where), body) =>
-            let (ground, rest) = flattenBoolExp(where) |> List.partition(isExpGround(freeVars));
-            let where = List.reduceLeft(lhs -> rhs -> BoolExp.And(rhs, lhs), rest);
-            let search = RelOp.Search(var, relSym, where, body);
-            (search, ground)
+            let (whereGround, whereRest) = List.partition(isExpGround(freeVars), where);
+            let search = RelOp.Search(var, relSym, whereRest ::: rest, innerOp);
+            (search, whereGround ::: ground)
         case RelOp.Query(_, _, _, _, _) => (op, Nil)
         case RelOp.Project(_, _) => (op, Nil)
     }
@@ -77,24 +72,21 @@ namespace Fixpoint {
         case RamStmt.Assign(_, _) => stmt
         case RamStmt.Purge(_) => stmt
         case RamStmt.Seq(xs) => RamStmt.Seq(List.map(queryStmt, xs))
-        case RamStmt.While(test, body) => RamStmt.While(test, queryStmt(body))
+        case RamStmt.Until(test, body) => RamStmt.Until(test, queryStmt(body))
         case RamStmt.Comment(_) => stmt
     }
 
     def queryOp[v : ToString](op: RelOp[v]): RelOp[v] = match op {
-        case RelOp.Search(var, relSym, None, body) =>
-            RelOp.Search(var, relSym, None, queryOp(body))
-        case RelOp.Search(var, relSym, Some(where), body) =>
+        case RelOp.Search(var, relSym, where, body) =>
             use Fixpoint/Ram.BoolExp.Eq;
             use Fixpoint/Ram.RamTerm.{Attribute, Lit};
             let (attributeQuery, rest1) =
-                flattenBoolExp(where) |>
                 List.partition(exp -> match exp {
                     case Eq(Attribute(row1, _), Attribute(row2, _)) =>
                         row1 != row2 and row1 == var
                     case Eq(Attribute(row, _), Lit(_)) => row == var
                     case _ => false
-                });
+                }, where);
             let (prefixQuery, rest2) =
                 List.sortWith(x -> y -> match (x, y) {
                     case (Eq(Attribute(_, index1), _), Eq(Attribute(_, index2), _)) =>
@@ -105,35 +97,19 @@ namespace Fixpoint {
                 match (prefixQuery, rest) ->
                     (List.map(match (Eq(_, rhs), _) -> rhs, prefixQuery), List.map(fst, rest));
             if (List.isEmpty(prefixQuery))
-                RelOp.Search(var, relSym, Some(where), queryOp(body))
+                RelOp.Search(var, relSym, where, queryOp(body))
             else
-                let where = List.reduceLeft(lhs -> rhs -> BoolExp.And(lhs, rhs), rest1 ::: rest2);
-                RelOp.Query(var, relSym, prefixQuery, where, queryOp(body))
+                RelOp.Query(var, relSym, prefixQuery, rest1 ::: rest2, queryOp(body))
         case RelOp.Query(_, _, _, _, _) => op
         case RelOp.Project(_, _) => op
-    }
-
-    /// Return a list of expressions e1 :: e2 :: ... :: en :: Nil such that
-    /// e1 /\ e2 /\ .... /\ en <=> exp.
-    def flattenBoolExp(exp: BoolExp[v]): List[BoolExp[v]] = flattenHelper(exp, Nil)
-
-    def flattenHelper(exp: BoolExp[v], acc: List[BoolExp[v]]): List[BoolExp[v]] = match exp {
-        case BoolExp.Empty(_) => exp :: acc
-        case BoolExp.MemberOf(_, _) => exp :: acc
-        case BoolExp.Guard(_, _) => exp :: acc
-        case BoolExp.Eq(_, _) => exp :: acc
-        case BoolExp.Not(_) => exp :: acc
-        case BoolExp.And(lhs, rhs) => flattenHelper(lhs, acc) |> flattenHelper(rhs)
     }
 
     /// An expression is ground if all its terms are ground.
     def isExpGround(freeVars: Set[RowVar], exp: BoolExp[v]): Bool = match exp {
         case BoolExp.Empty(_) => true
-        case BoolExp.MemberOf(terms, _) => List.forall(isTermGround(freeVars), terms)
+        case BoolExp.NotMemberOf(terms, _) => List.forall(isTermGround(freeVars), terms)
         case BoolExp.Guard(_, terms) => List.forall(isTermGround(freeVars), terms)
         case BoolExp.Eq(lhs, rhs) => isTermGround(freeVars, lhs) and isTermGround(freeVars, rhs)
-        case BoolExp.Not(e) => isExpGround(freeVars, e)
-        case BoolExp.And(lhs, rhs) => isExpGround(freeVars, lhs) and isExpGround(freeVars, rhs)
     }
 
     /// A term is ground if it is a literal or a free variable.

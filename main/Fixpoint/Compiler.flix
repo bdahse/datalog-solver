@@ -57,14 +57,9 @@ namespace Fixpoint {
                 RamStmt.Assign(RelSym.Delta(relName), RelSym.New(relName))
             }, idb) |>
             List.fold;
-        let whileTest =
-            List.map(match PredSym(relName, _) -> {
-                BoolExp.Empty(RelSym.Delta(relName))
-            }, idb) |>
-            List.reduceLeft(lhs -> rhs -> BoolExp.And(lhs, rhs)) |>
-            Option.map(BoolExp.Not);
-        let whileBody = List.fold(purge :: evalIncr :: mergeNew :: assign :: Nil);
-        let fixpoint = RamStmt.While(unwrap(whileTest), whileBody);
+        let loopTest = List.map(match PredSym(relName, _) -> BoolExp.Empty(RelSym.Delta(relName)), idb);
+        let loopBody = List.fold(purge :: evalIncr :: mergeNew :: assign :: Nil);
+        let fixpoint = RamStmt.Until(loopTest, loopBody);
         List.fold(eval :: mergeDelta :: fixpoint :: Nil)
 
     /// Compile rule into a join loop.
@@ -82,7 +77,7 @@ namespace Fixpoint {
                         if (isLast)
                             (false, RelOp.Search(rowVar, RelSym.Full(pred), join, acc))
                         else
-                            (false, RelOp.Search(rowVar, RelSym.Full(pred), None, acc))
+                            (false, RelOp.Search(rowVar, RelSym.Full(pred), Nil, acc))
                 }, (true, projection), positiveAtoms(augBody)) |>
                 snd |>
                 RamStmt.Insert;
@@ -108,13 +103,12 @@ namespace Fixpoint {
                         } else {
                             RelSym.Full(pred)
                         };
-                        let searchCond = if (isLast) {
-                            join |>
-                            Option.map(lhs -> BoolExp.And(lhs, BoolExp.Not(BoolExp.MemberOf(ramTerms, RelSym.Full(headPred)))))
+                        let where = if (isLast) {
+                            BoolExp.NotMemberOf(ramTerms, RelSym.Full(headPred)) :: join
                         } else {
-                            None
+                            Nil
                         };
-                        (false, RelOp.Search(rowVar, relSym, searchCond, acc))
+                        (false, RelOp.Search(rowVar, relSym, where, acc))
                 }, (true, projection), positiveAtoms) |>
                 snd |>
                 RamStmt.Insert
@@ -166,7 +160,7 @@ namespace Fixpoint {
 
     /// Equates every term in a positive body atom with an attribute
     /// and declares that terms in negative body atoms are not in the corresponding relations.
-    def joinTerms(env: Map[VarSym, RamTerm[v]], body: List[(BodyPredicate[v], RowVar, Int32)]): Option[BoolExp[v]] =
+    def joinTerms(env: Map[VarSym, RamTerm[v]], body: List[(BodyPredicate[v], RowVar, Int32)]): List[BoolExp[v]] =
         List.flatMap(match (atom, rowVar, _) -> match atom {
             case BodyAtom(_, Polarity.Positive, terms, _) =>
                 List.mapWithIndex(term -> j -> {
@@ -175,11 +169,10 @@ namespace Fixpoint {
                 }, terms)
             case BodyAtom(PredSym(relName, _), Polarity.Negative, terms, _) =>
                 let ramTerms = List.map(compileBodyTerm(env), terms);
-                BoolExp.Not(BoolExp.MemberOf(ramTerms, RelSym.Full(relName))) :: Nil
+                BoolExp.NotMemberOf(ramTerms, RelSym.Full(relName)) :: Nil
             case GuardAtom(f, terms, _) =>
                 BoolExp.Guard(f, List.map(compileBodyTerm(env), terms)) :: Nil
-        }, body) |>
-        List.reduceLeft(lhs -> rhs -> BoolExp.And(lhs, rhs))
+        }, body)
 
     def unwrap(o: Option[a]): a = match o {
         case Some(a) => a
