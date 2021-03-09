@@ -21,7 +21,7 @@ namespace Fixpoint/Ram {
         case Assign(RelSym, RelSym)
         case Purge(RelSym)
         case Seq(List[RamStmt[v]])
-        case While(BoolExp[v], RamStmt[v])
+        case Until(List[BoolExp[v]], RamStmt[v])
         case Comment(String)
     }
 
@@ -45,8 +45,9 @@ namespace Fixpoint/Ram {
                 case Assign(lhs, rhs) => "${lhs} := ${rhs}"
                 case Purge(relSym) => "purge ${relSym}"
                 case Seq(xs) => List.map(ToString.toString, xs) |> String.intercalate(";${nl}")
-                case While(test, body) =>
-                    "while(${test}) do${nl}${String.indent(4, "${body}")}end"
+                case Until(test, body) =>
+                    let test = List.map(ToString.toString, test) |> String.intercalate(" Λ ");
+                    "until(${test}) do${nl}${String.indent(4, "${body}")}end"
                 case Comment(comment) => "// ${comment}"
             }
     }

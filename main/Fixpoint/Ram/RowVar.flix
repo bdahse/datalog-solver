@@ -25,6 +25,15 @@ namespace Fixpoint/Ram {
         }
     }
 
+    instance Eq[RowVar] {
+        def eq(x: RowVar, y: RowVar): Bool = match x <=> y {
+            case EqualTo => true
+            case _ => false
+        }
+
+        def neq(x: RowVar, y: RowVar): Bool = not (x == y)
+    }
+
     instance Order[RowVar] {
         def less(a: RowVar, b: RowVar): Bool = match a <=> b {
             case LessThan => true

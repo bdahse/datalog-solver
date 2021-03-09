@@ -22,7 +22,7 @@ use Fixpoint/Ast.Polarity.{Positive, Negative};
 use Fixpoint/Ast.SourceLocation.Unknown;
 use Fixpoint/Ast.PredSym.PredSym;
 use Fixpoint/Ast.VarSym.VarSym;
-use Fixpoint.{compile, interpret};
+use Fixpoint.{compile, interpret, hoistStmt, queryStmt};
 use ToString.toString;
 
 @test
@@ -58,6 +58,8 @@ pub def test01(): Bool & Impure =
                             Unknown);
 	Map#{PredSym("Happy", Unknown) -> 0} |>
     compile(fact1 :: fact2 :: fact3 :: fact4 :: rule1 :: Nil) |>
+	hoistStmt |>
+	queryStmt |>
     interpret |>
     toString == "Model#{Age#{34}, Famous#{Joakim}, Happy#{Joakim}, Rich#{Magnus, Joakim}}"
 
@@ -172,6 +174,8 @@ pub def test02() : Bool & Impure =
         PredSym("AntiSymmetric", Unknown) -> 1
     } |>
     compile(fact1 :: fact2 :: fact3 :: fact4 :: rule1 :: rule2 :: rule3 :: rule4 :: rule5 :: rule6 :: Nil) |>
+	hoistStmt |>
+	queryStmt |>
     interpret |>
     toString == "Model#{AntiSymmetric#{(A, D), (A, C), (A, B)}, Edge#{(D, B), (C, D), (B, C), (A, B)}, Path#{(D, D), (D, C), (D, B), (C, D), (C, C), (C, B), (B, D), (B, C), (B, B), (A, D), (A, C), (A, B)}, Unconnected#{(D, A), (C, A), (B, A), (A, A)}, Vertex#{D, C, B, A}}"
 
@@ -225,6 +229,8 @@ pub def test03(): Bool & Impure =
                             Unknown);
 	Map#{PredSym("Sum", Unknown) -> 0} |>
     compile(fact1 :: fact2 :: fact3 :: fact4 :: rule1 :: rule2 :: Nil) |>
+	hoistStmt |>
+	queryStmt |>
     interpret |>
     toString == "Model#{Number#{7, 5, 3, 2}, Sum#{7 + 7, 7 + 5, 7 + 3, 7 + 2, 7 + 0, 5 + 7, 5 + 5, 5 + 3, 5 + 2, 5 + 0, 3 + 7, 3 + 5, 3 + 3, 3 + 2, 3 + 0, 2 + 7, 2 + 5, 2 + 3, 2 + 2, 2 + 0}}"
 
@@ -295,5 +301,7 @@ pub def test04(): Bool & Impure =
                             Unknown);
     Map#{PredSym("Path", Unknown) -> 0} |>
     compile(fact1 :: fact2 :: fact3 :: fact4 :: rule1 :: rule2 :: Nil) |>
+	hoistStmt |>
+	queryStmt |>
     interpret |>
     toString == "Model#{Edge#{(D, 050, B), (C, 110, D), (B, 070, C), (A, 080, B)}, Path#{(C, D), (B, D), (B, C), (A, D), (A, C), (A, B)}}"
