@@ -24,19 +24,31 @@ use Fixpoint/Ast.PredSym.PredSym;
 use Fixpoint/Ast.VarSym.VarSym;
 use Fixpoint/Ast.SourceLocation.Unknown;
 
-pub def benchmark(): Unit & Impure =
-    let rand = Random.nextNatWithMax(Random.new());
+rel Edge(x: Int32, y: Int32)
+rel Path(x: Int32, y: Int32)
+
+@benchmark
+pub def benchmarkFlix(): Bool =
     let facts =
-        List.unfold(i -> if (i < 1000) {
-            let fact =
-                Constraint(HeadAtom(PredSym("Edge", Unknown),
-                                    HeadTerm.Lit(ToString.toString(rand(1000)), Unknown) ::
-                                    HeadTerm.Lit(ToString.toString(rand(1000)), Unknown) :: Nil, Unknown),
-                            Nil, Unknown);
-            Some((fact, i+1))
-        } else {
-            None
-        }, 0);
+        List.range(0, 250) |>
+        List.foldLeft((acc: #{ Edge, Path }, s: Int) -> {
+            acc <+> Edge(s, (s + 1) % 250).
+        }, #{});
+    let rules = #{
+        Path(x, y) :- Edge(x, y).
+        Path(x, z) :- Path(x, y), Edge(y, z).
+    };
+    (solve facts <+> rules) |= Path(1, 20).
+
+pub def benchmark(): Unit & Impure =
+    let facts =
+        List.range(0, 250) |>
+        List.foldLeft(acc -> i -> {
+            Constraint(HeadAtom(PredSym("Edge", Unknown),
+                                HeadTerm.Lit(i, Unknown) ::
+                                HeadTerm.Lit((i+1) % 250, Unknown) :: Nil, Unknown),
+                        Nil, Unknown) :: acc
+        }, Nil);
     let rule1 = Constraint(HeadAtom(PredSym("Path", Unknown),
                                     HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
                                     HeadTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
@@ -51,12 +63,12 @@ pub def benchmark(): Unit & Impure =
                                     HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
                                     HeadTerm.Var(VarSym("z", Unknown), Unknown) :: Nil,
                                     Unknown),
-                            BodyAtom(PredSym("Path", Unknown),
+                            BodyAtom(PredSym("Edge", Unknown),
                                     Polarity.Positive,
                                     BodyTerm.Var(VarSym("x", Unknown), Unknown) ::
                                     BodyTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
                                     Unknown) ::
-                            BodyAtom(PredSym("Edge", Unknown),
+                            BodyAtom(PredSym("Path", Unknown),
                                     Polarity.Positive,
                                     BodyTerm.Var(VarSym("y", Unknown), Unknown) ::
                                     BodyTerm.Var(VarSym("z", Unknown), Unknown) :: Nil,
