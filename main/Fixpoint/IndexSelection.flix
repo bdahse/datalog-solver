@@ -58,10 +58,9 @@ namespace Fixpoint {
     def hoistOp(op: RelOp[v], freeVars: Set[RowVar]): (RelOp[v], List[BoolExp[v]]) = match op {
         case RelOp.Search(var, relSym, where, body) =>
             let (innerOp, innerGround) = hoistOp(body, Set.insert(var, freeVars));
-            let (ground, rest) = List.partition(isExpGround(freeVars), innerGround);
-            let (whereGround, whereRest) = List.partition(isExpGround(freeVars), where);
-            let search = RelOp.Search(var, relSym, whereRest ::: rest, innerOp);
-            (search, whereGround ::: ground)
+            let (ground, rest) = List.partition(isExpGround(freeVars), where ::: innerGround);
+            let search = RelOp.Search(var, relSym, rest, innerOp);
+            (search, ground)
         case RelOp.Query(_, _, _, _, _) => (op, Nil)
         case RelOp.Project(_, _) => (op, Nil)
     }
@@ -99,7 +98,8 @@ namespace Fixpoint {
             if (List.isEmpty(prefixQuery))
                 RelOp.Search(var, relSym, where, queryOp(body))
             else
-                RelOp.Query(var, relSym, prefixQuery, rest1 ::: rest2, queryOp(body))
+                let query = List.toArray(prefixQuery) as & Pure;
+                RelOp.Query(var, relSym, query, rest1 ::: rest2, queryOp(body))
         case RelOp.Query(_, _, _, _, _) => op
         case RelOp.Project(_, _) => op
     }
@@ -107,7 +107,7 @@ namespace Fixpoint {
     /// An expression is ground if all its terms are ground.
     def isExpGround(freeVars: Set[RowVar], exp: BoolExp[v]): Bool = match exp {
         case BoolExp.Empty(_) => true
-        case BoolExp.NotMemberOf(terms, _) => List.forall(isTermGround(freeVars), terms)
+        case BoolExp.NotMemberOf(terms, _) => Array.forall(isTermGround(freeVars), terms) as & Pure
         case BoolExp.Guard(_, terms) => List.forall(isTermGround(freeVars), terms)
         case BoolExp.Eq(lhs, rhs) => isTermGround(freeVars, lhs) and isTermGround(freeVars, rhs)
     }

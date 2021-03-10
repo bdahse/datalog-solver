@@ -68,7 +68,8 @@ namespace Fixpoint {
             let augBody = augmentBody(body);
             let env = unifyVars(augBody);
             let join = joinTerms(env, augBody);
-            let ramTerms = List.map(compileHeadTerm(env), headTerms);
+            let hdTerms = List.toArray(headTerms) as & Pure;
+            let ramTerms = Array.map(compileHeadTerm(env), hdTerms) as & Pure;
             let projection = RelOp.Project(ramTerms, RelSym.Full(headPred));
             let insert =
                 List.foldRight(match (atom, rowVar, _) -> match (isLast, acc) -> match atom {
@@ -93,7 +94,8 @@ namespace Fixpoint {
             let compile = delta -> {
                 let env = unifyVars(augBody);
                 let join = joinTerms(env, augBody);
-                let ramTerms = List.map(compileHeadTerm(env), headTerms);
+                let hdTerms = List.toArray(headTerms) as & Pure;
+                let ramTerms = Array.map(compileHeadTerm(env), hdTerms) as & Pure;
                 let projection = RelOp.Project(ramTerms, RelSym.New(headPred));
                 List.foldRight(match (atom, rowVar, i) -> match (isLast, acc) -> match atom {
                     case GuardAtom(_) => (isLast, acc)
@@ -168,7 +170,8 @@ namespace Fixpoint {
                     BoolExp.Eq(RamTerm.Attribute(rowVar, j), ramTerm)
                 }, terms)
             case BodyAtom(PredSym(relName, _), Polarity.Negative, terms, _) =>
-                let ramTerms = List.map(compileBodyTerm(env), terms);
+                let ts = List.toArray(terms) as & Pure;
+                let ramTerms = Array.map(compileBodyTerm(env), ts) as & Pure;
                 BoolExp.NotMemberOf(ramTerms, RelSym.Full(relName)) :: Nil
             case GuardAtom(f, terms, _) =>
                 BoolExp.Guard(f, List.map(compileBodyTerm(env), terms)) :: Nil

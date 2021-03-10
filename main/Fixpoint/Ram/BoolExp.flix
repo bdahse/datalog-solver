@@ -17,7 +17,7 @@
 namespace Fixpoint/Ram {
     pub enum BoolExp[v] {
         case Empty(RelSym)
-        case NotMemberOf(List[RamTerm[v]], RelSym)
+        case NotMemberOf(Array[RamTerm[v]], RelSym)
         case Guard(List[v] -> Bool, List[RamTerm[v]])
         case Eq(RamTerm[v], RamTerm[v])
     }
@@ -26,6 +26,7 @@ namespace Fixpoint/Ram {
         def toString(exp: BoolExp[v]): String = match exp {
             case Empty(relSym) => "${relSym} = ∅"
             case NotMemberOf(terms, relSym) =>
+                let terms = Array.toList(terms) as & Pure;
                 let tuple = List.map(ToString.toString, terms) |> String.intercalate(", ");
                 "(${tuple}) ∉ ${relSym}"
             case Guard(_, terms) =>
