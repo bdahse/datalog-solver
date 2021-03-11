@@ -15,9 +15,52 @@
  */
 
 use Fixpoint/Ram.{RamStmt, RelOp, RelSym, RamTerm, BoolExp, RowVar};
+use Fixpoint.Tuple;
+
+instance Order[Tuple[v]] with [v : Order] {
+    pub def less(a: Tuple[v], b: Tuple[v]): Bool = match a <=> b {
+        case LessThan => true
+        case _ => false
+    }
+
+    pub def lessEqual(a: Tuple[v], b: Tuple[v]): Bool = match a <=> b {
+        case LessThan => true
+        case EqualTo => true
+        case _ => false
+    }
+
+    pub def greater(a: Tuple[v], b: Tuple[v]): Bool = match a <=> b {
+        case GreaterThan => true
+        case _ => false
+    }
+
+    pub def greaterEqual(a: Tuple[v], b: Tuple[v]): Bool = match a <=> b {
+        case GreaterThan => true
+        case EqualTo => true
+        case _ => false
+    }
+
+    pub def compare(a: Tuple[v], b: Tuple[v]): Comparison = compareHelper(a, b, 0) as & Pure
+}
+
+// Unused def. unless this is public. Bug?
+pub def compareHelper[v : Order](a: Array[v], b: Array[v], i: Int32): Comparison & Impure =
+    let alen = Array.length(a);
+    let blen = Array.length(b);
+    if (i >= alen and i >= blen)
+        EqualTo
+    else if (i >= alen)
+        LessThan
+    else if (i >= blen)
+        GreaterThan
+    else match a[i] <=> b[i] {
+        case EqualTo => compareHelper(a, b, i+1)
+        case cmp => cmp
+    }
+
 
 namespace Fixpoint {
-    pub opaque type Tuple[v] = Array[v]
+    pub type alias Tuple[v] = Array[v]
     type alias Database[v] = MutMap[RelSym, MutSet[Tuple[v]]]
     type alias SearchEnv[v] = Map[RowVar, Tuple[v]]
     pub opaque type Model[v] = Map[String, Set[Tuple[v]]]
@@ -79,16 +122,15 @@ namespace Fixpoint {
                     }
                 })
             case RelOp.Project(terms, relSym) =>
-                let tuple = Tuple(Array.map(evalTerm(env), terms));
+                let tuple = Array.map(evalTerm(env), terms);
                 MutMap.getOrElsePut!(relSym, MutSet.empty(), db) |>
                 MutSet.add!(tuple)
         }
 
     def evalQuery[v : Order](env: SearchEnv[v], i: Int32, query: Array[RamTerm[v]], tuple: Tuple[v]): Comparison =
-        let Tuple(t) = tuple;
         if (i >= Array.length(query))
             EqualTo
-        else match (t[i] as & Pure) <=> evalTerm(env, query[i] as & Pure) {
+        else match (tuple[i] as & Pure) <=> evalTerm(env, query[i] as & Pure) {
             case EqualTo => evalQuery(env, i+1, query, tuple)
             case cmp => cmp
         }
@@ -99,7 +141,7 @@ namespace Fixpoint {
                 MutMap.getWithDefault(relSym, MutSet.empty(), db) |> MutSet.isEmpty
             case BoolExp.NotMemberOf(terms, relSym) => match MutMap.get(relSym, db) {
                 case Some(table) =>
-                    let tuple = Tuple(Array.map(evalTerm(env), terms));
+                    let tuple = Array.map(evalTerm(env), terms);
                     not MutSet.memberOf(tuple, table)
                 case None => true
             }
@@ -112,54 +154,11 @@ namespace Fixpoint {
     def evalTerm(env: SearchEnv[v], term: RamTerm[v]): v = match term {
         case RamTerm.Lit(v) => v
         case RamTerm.Attribute(rowVar, index) =>
-            let Tuple(tuple) = Map.getWithDefault(rowVar, Tuple([] as & Pure), env);
+            let tuple = Map.getWithDefault(rowVar, ([] as & Pure), env);
             tuple[index] as & Pure
         case RamTerm.App(f, args) =>
             List.map(evalTerm(env), args) |> f
     }
-
-    instance Order[Tuple[v]] with [v : Order] {
-        pub def less(a: Tuple[v], b: Tuple[v]): Bool = match a <=> b {
-            case LessThan => true
-            case _ => false
-        }
-
-        pub def lessEqual(a: Tuple[v], b: Tuple[v]): Bool = match a <=> b {
-            case LessThan => true
-            case EqualTo => true
-            case _ => false
-        }
-
-        pub def greater(a: Tuple[v], b: Tuple[v]): Bool = match a <=> b {
-            case GreaterThan => true
-            case _ => false
-        }
-
-        pub def greaterEqual(a: Tuple[v], b: Tuple[v]): Bool = match a <=> b {
-            case GreaterThan => true
-            case EqualTo => true
-            case _ => false
-        }
-
-        pub def compare(a: Tuple[v], b: Tuple[v]): Comparison = match (a, b) {
-            case (Tuple(a), Tuple(b)) => compareHelper(a, b, 0) as & Pure
-        }
-    }
-
-    // Unused def. unless this is public. Bug?
-    pub def compareHelper[v : Order](a: Array[v], b: Array[v], i: Int32): Comparison & Impure =
-        let alen = Array.length(a);
-        let blen = Array.length(b);
-        if (i >= alen and i >= blen)
-            EqualTo
-        else if (i >= alen)
-            LessThan
-        else if (i >= blen)
-            GreaterThan
-        else match a[i] <=> b[i] {
-            case EqualTo => compareHelper(a, b, i+1)
-            case cmp => cmp
-        }
 
     instance ToString[Model[v]] with [v : ToString] {
         def toString(model: Model[v]): String = match model {
@@ -167,7 +166,7 @@ namespace Fixpoint {
                 let relations =
                     Map.mapWithKey(k -> v -> {
                         let relation =
-                            Set.map(match Tuple(tuple) ->
+                            Set.map(tuple ->
                             match List.map(ToString.toString, Array.toList(tuple) as & Pure) {
                                 case x :: Nil => x
                                 case ts =>
