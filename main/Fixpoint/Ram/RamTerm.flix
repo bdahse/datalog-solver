@@ -25,8 +25,8 @@ namespace Fixpoint/Ram {
         pub def toString(term: RamTerm[v]): String = match term {
             case Lit(v) => ToString.toString(v)
             case Attribute(var, index) => "${var}[${index}]"
-            case App(f, args) =>
-                let args = List.map(ToString.toString, args) |> String.intercalate(", ");
+            case App(_, terms) =>
+                let args = List.map(ToString.toString, terms) |> String.intercalate(", ");
                 "f(${args})"
         }
     }

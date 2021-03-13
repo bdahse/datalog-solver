@@ -29,22 +29,22 @@ namespace Fixpoint/Ram {
                     if (List.isEmpty(where))
                         "search ${var} ∈ ${relSym} do${nl}${String.indent(4, "${body}")}end"
                     else
-                        let where = List.map(ToString.toString, where) |> String.intercalate(" Λ ");
-                        "search ${var} ∈ ${relSym} where${nl}${String.indent(4, "${where}")}do${nl}${String.indent(4, "${body}")}end"
-                case Query(var, relSym, query, where, body) =>
+                        let cond = List.map(ToString.toString, where) |> String.intercalate(" Λ ");
+                        "search ${var} ∈ ${relSym} where${nl}${String.indent(4, "${cond}")}do${nl}${String.indent(4, "${body}")}end"
+                case Query(var, relSym, prefixQuery, where, body) =>
                     let query =
                         List.mapWithIndex(term -> i -> {
                             ToString.toString(BoolExp.Eq(RamTerm.Attribute(var, i), term))
-                        }, Array.toList(query) as & Pure) |>
+                        }, Array.toList(prefixQuery) as & Pure) |>
                         String.intercalate(" ∧ ");
                     if (List.isEmpty(where))
                         "query {${var} ∈ ${relSym} | ${query}} do${nl}${String.indent(4, "${body}")}end"
                     else
-                        let where = List.map(ToString.toString, where) |> String.intercalate(" Λ ");
-                        "query {${var} ∈ ${relSym} | ${query}} where${nl}${String.indent(4, "${where}")}do${nl}${String.indent(4, "${body}")}end"
+                        let cond = List.map(ToString.toString, where) |> String.intercalate(" Λ ");
+                        "query {${var} ∈ ${relSym} | ${query}} where${nl}${String.indent(4, "${cond}")}do${nl}${String.indent(4, "${body}")}end"
                 case Project(terms, relSym) =>
-                    let terms = Array.toList(terms) as & Pure;
-                    let tuple = List.map(ToString.toString, terms) |> String.intercalate(", ");
+                    let ts = Array.toList(terms) as & Pure;
+                    let tuple = List.map(ToString.toString, ts) |> String.intercalate(", ");
                     "project (${tuple}) into ${relSym}"
             }
     }

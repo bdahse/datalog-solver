@@ -30,8 +30,8 @@ namespace Fixpoint/Ram {
 
         pub def combine(x: RamStmt[v], y: RamStmt[v]): RamStmt[v] = match (x, y) {
             case (RamStmt.Seq(xs), RamStmt.Seq(ys)) => RamStmt.Seq(xs ::: ys)
-            case (x, RamStmt.Seq(ys)) => RamStmt.Seq(x :: ys)
-            case (RamStmt.Seq(xs), y) => RamStmt.Seq(xs ::: y :: Nil)
+            case (_, RamStmt.Seq(ys)) => RamStmt.Seq(x :: ys)
+            case (RamStmt.Seq(xs), _) => RamStmt.Seq(xs ::: y :: Nil)
             case _ => RamStmt.Seq(x :: y :: Nil)
         }
     }
@@ -46,8 +46,8 @@ namespace Fixpoint/Ram {
                 case Purge(relSym) => "purge ${relSym}"
                 case Seq(xs) => List.map(ToString.toString, xs) |> String.intercalate(";${nl}")
                 case Until(test, body) =>
-                    let test = List.map(ToString.toString, test) |> String.intercalate(" Λ ");
-                    "until(${test}) do${nl}${String.indent(4, "${body}")}end"
+                    let tst = List.map(ToString.toString, test) |> String.intercalate(" Λ ");
+                    "until(${tst}) do${nl}${String.indent(4, "${body}")}end"
                 case Comment(comment) => "// ${comment}"
             }
     }

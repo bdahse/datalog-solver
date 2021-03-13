@@ -26,8 +26,8 @@ namespace Fixpoint/Ram {
         pub def toString(exp: BoolExp[v]): String = match exp {
             case Empty(relSym) => "${relSym} = ∅"
             case NotMemberOf(terms, relSym) =>
-                let terms = Array.toList(terms) as & Pure;
-                let tuple = List.map(ToString.toString, terms) |> String.intercalate(", ");
+                let ts = Array.toList(terms) as & Pure;
+                let tuple = List.map(ToString.toString, ts) |> String.intercalate(", ");
                 "(${tuple}) ∉ ${relSym}"
             case Guard(_, terms) =>
                 let ts = List.map(ToString.toString, terms) |> String.intercalate(", ");
