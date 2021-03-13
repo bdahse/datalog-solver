@@ -166,7 +166,7 @@ namespace Fixpoint {
     }
 
     instance ToString[Model[v]] with [v : ToString] {
-        def toString(model: Model[v]): String = match model {
+        pub def toString(model: Model[v]): String = match model {
             case Model(db) =>
                 let relations =
                     Map.mapWithKey(k -> v -> {

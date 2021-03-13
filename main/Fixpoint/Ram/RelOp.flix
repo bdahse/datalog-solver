@@ -22,7 +22,7 @@ namespace Fixpoint/Ram {
     }
 
     instance ToString[RelOp[v]] with [v : ToString] {
-        def toString(op: RelOp[v]): String =
+        pub def toString(op: RelOp[v]): String =
             let nl = String.lineSeparator();
             match op {
                 case Search(var, relSym, where, body) =>

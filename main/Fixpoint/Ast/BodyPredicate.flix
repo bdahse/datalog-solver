@@ -38,7 +38,7 @@ namespace Fixpoint/Ast {
         }, Set.empty(), terms)
 
     instance ToString[BodyPredicate[v]] with [v : ToString] {
-        def toString(body: BodyPredicate[v]): String = match body {
+        pub def toString(body: BodyPredicate[v]): String = match body {
             case BodyAtom(predSym, Positive, terms, _) =>
                 let ts = List.map(ToString.toString, terms) |> String.intercalate(", ");
                 "${predSym}(${ts})"

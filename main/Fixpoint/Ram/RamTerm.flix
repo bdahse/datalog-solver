@@ -22,7 +22,7 @@ namespace Fixpoint/Ram {
     }
 
     instance ToString[RamTerm[v]] with [v : ToString] {
-        def toString(term: RamTerm[v]): String = match term {
+        pub def toString(term: RamTerm[v]): String = match term {
             case Lit(v) => ToString.toString(v)
             case Attribute(var, index) => "${var}[${index}]"
             case App(f, args) =>

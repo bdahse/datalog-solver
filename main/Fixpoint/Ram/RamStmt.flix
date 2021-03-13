@@ -26,9 +26,9 @@ namespace Fixpoint/Ram {
     }
 
     instance Monoid[RamStmt[v]] {
-        def empty(): RamStmt[v] = RamStmt.Seq(Nil)
+        pub def empty(): RamStmt[v] = RamStmt.Seq(Nil)
 
-        def combine(x: RamStmt[v], y: RamStmt[v]): RamStmt[v] = match (x, y) {
+        pub def combine(x: RamStmt[v], y: RamStmt[v]): RamStmt[v] = match (x, y) {
             case (RamStmt.Seq(xs), RamStmt.Seq(ys)) => RamStmt.Seq(xs ::: ys)
             case (x, RamStmt.Seq(ys)) => RamStmt.Seq(x :: ys)
             case (RamStmt.Seq(xs), y) => RamStmt.Seq(xs ::: y :: Nil)
@@ -37,7 +37,7 @@ namespace Fixpoint/Ram {
     }
 
     instance ToString[RamStmt[v]] with [v : ToString] {
-        def toString(stmt: RamStmt[v]): String =
+        pub def toString(stmt: RamStmt[v]): String =
             let nl = String.lineSeparator();
             match stmt {
                 case Insert(op) => ToString.toString(op)

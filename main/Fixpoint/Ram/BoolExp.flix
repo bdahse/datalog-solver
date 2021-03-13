@@ -23,7 +23,7 @@ namespace Fixpoint/Ram {
     }
 
     instance ToString[BoolExp[v]] with [v : ToString] {
-        def toString(exp: BoolExp[v]): String = match exp {
+        pub def toString(exp: BoolExp[v]): String = match exp {
             case Empty(relSym) => "${relSym} = ∅"
             case NotMemberOf(terms, relSym) =>
                 let terms = Array.toList(terms) as & Pure;

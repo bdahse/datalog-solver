@@ -21,7 +21,7 @@ namespace Fixpoint/Ast {
     }
 
     instance ToString[HeadTerm[v]] with [v : ToString] {
-        def toString(term: HeadTerm[v]): String = match term {
+        pub def toString(term: HeadTerm[v]): String = match term {
             case HeadTerm.Var(varSym, _) => ToString.toString(varSym)
             case HeadTerm.Lit(v, _) => ToString.toString(v)
             case HeadTerm.App(_, args, _) =>

@@ -35,38 +35,38 @@ namespace Fixpoint/Ast {
     }
 
     instance Monoid[PrecedenceGraph[v]] {
-        def empty(): PrecedenceGraph[v] = PrecedenceGraph(Set.empty())
+        pub def empty(): PrecedenceGraph[v] = PrecedenceGraph(Set.empty())
 
-        def combine(x: PrecedenceGraph[v], y: PrecedenceGraph[v]): PrecedenceGraph[v] = match (x, y) {
+        pub def combine(x: PrecedenceGraph[v], y: PrecedenceGraph[v]): PrecedenceGraph[v] = match (x, y) {
             case (PrecedenceGraph(xs), PrecedenceGraph(ys)) => PrecedenceGraph(Set.union(xs, ys))
         }
     }
 
     instance Order[PrecedenceEdge[v]] {
 
-        def less(a: PrecedenceEdge[v], b: PrecedenceEdge[v]): Bool = match a <=> b {
+        pub def less(a: PrecedenceEdge[v], b: PrecedenceEdge[v]): Bool = match a <=> b {
             case LessThan => true
             case _ => false
         }
 
-        def lessEqual(a: PrecedenceEdge[v], b: PrecedenceEdge[v]): Bool = match a <=> b {
+        pub def lessEqual(a: PrecedenceEdge[v], b: PrecedenceEdge[v]): Bool = match a <=> b {
             case LessThan => true
             case EqualTo => true
             case _ => false
         }
 
-        def greater(a: PrecedenceEdge[v], b: PrecedenceEdge[v]): Bool = match a <=> b {
+        pub def greater(a: PrecedenceEdge[v], b: PrecedenceEdge[v]): Bool = match a <=> b {
             case GreaterThan => true
             case _ => false
         }
 
-        def greaterEqual(a: PrecedenceEdge[v], b: PrecedenceEdge[v]): Bool = match a <=> b {
+        pub def greaterEqual(a: PrecedenceEdge[v], b: PrecedenceEdge[v]): Bool = match a <=> b {
             case GreaterThan => true
             case EqualTo => true
             case _ => false
         }
 
-        def compare(a: PrecedenceEdge[v], b: PrecedenceEdge[v]): Comparison = match (a,b) {
+        pub def compare(a: PrecedenceEdge[v], b: PrecedenceEdge[v]): Comparison = match (a,b) {
             case (PositiveEdge(BodyAtom(s1, _, _, _), HeadAtom(s2, _, _)),
                     PositiveEdge(BodyAtom(s3, _, _, _), HeadAtom(s4, _, _))) =>
                 let cmp = s1 <=> s3;
