@@ -62,7 +62,7 @@ pub def compareHelper[v : Order](a: Array[v], b: Array[v], i: Int32): Comparison
 namespace Fixpoint {
     pub type alias Tuple[v] = Array[v]
     type alias Database[v] = MutMap[RelSym, MutSet[Tuple[v]]]
-    type alias SearchEnv[v] = Map[RowVar, Tuple[v]]
+    type alias SearchEnv[v] = Array[Tuple[v]]
     pub opaque type Model[v] = Map[String, Set[Tuple[v]]]
 
     pub def interpret[v : Order : Eq](stmt: RamStmt[v]): Model[v] & Impure =
@@ -78,7 +78,7 @@ namespace Fixpoint {
         Model
 
     def evalStmt[v : Order : Eq](db: Database[v], stmt: RamStmt[v]): Unit & Impure = match stmt {
-        case RamStmt.Insert(relOp) => evalOp(db, Map#{}, relOp)
+        case RamStmt.Insert(relOp) => evalOp(db, allocEnv(0, relOp), relOp)
         case RamStmt.Merge(src, dst) =>
             db |>
             MutMap.getOrElsePut!(dst, MutSet.empty()) |>
@@ -89,7 +89,7 @@ namespace Fixpoint {
         case RamStmt.Purge(relSym) => MutMap.remove!(relSym, db)
         case RamStmt.Seq(stmts) => List.foreach(evalStmt(db), stmts)
         case RamStmt.Until(test, body) =>
-            if (List.forall(evalBoolExp(db, Map#{}) as BoolExp[v] -> Bool, test)) {
+            if (List.forall(evalBoolExp(db, []) as BoolExp[v] -> Bool, test)) {
                 ()
             } else {
                 evalStmt(db, body);
@@ -98,23 +98,29 @@ namespace Fixpoint {
         case RamStmt.Comment(_) => ()
     }
 
+    def allocEnv(depth: Int32, relOp: RelOp[v]): SearchEnv[v] & Impure = match relOp {
+        case RelOp.Search(_, _, _, body) => allocEnv(depth + 1, body)
+        case RelOp.Query(_, _, _, _, body) => allocEnv(depth + 1, body)
+        case RelOp.Project(_) => Array.new([], depth)
+    }
+
     def evalOp[v : Order : Eq](db: Database[v], env: SearchEnv[v], op: RelOp[v]): Unit & Impure =
         match op {
-            case RelOp.Search(rowVar, relSym, where, body) =>
+            case RelOp.Search(RowVar.Index(i), relSym, where, body) =>
                 MutMap.getWithDefault(relSym, MutSet.empty(), db) |>
                 MutSet.foreach(row -> {
-                    let env = Map.insert(rowVar, row, env);
+                    env[i] = row;
                     if (List.forall(evalBoolExp(db, env) as BoolExp[v] -> Bool, where)) {
                         evalOp(db, env, body)
                     } else {
                         ()
                     }
                 })
-            case RelOp.Query(rowVar, relSym, query, where, body) =>
+            case RelOp.Query(RowVar.Index(i), relSym, query, where, body) =>
                 MutMap.getWithDefault(relSym, MutSet.empty(), db) |>
                 MutSet.query(evalQuery(env, 0, query)) |>
                 List.foreach(row -> {
-                    let env = Map.insert(rowVar, row, env);
+                    env[i] = row;
                     if (List.forall(evalBoolExp(db, env) as BoolExp[v] -> Bool, where)) {
                         evalOp(db, env, body)
                     } else {
@@ -125,6 +131,7 @@ namespace Fixpoint {
                 let tuple = Array.map(evalTerm(env), terms);
                 MutMap.getOrElsePut!(relSym, MutSet.empty(), db) |>
                 MutSet.add!(tuple)
+            case _ => ()
         }
 
     def evalQuery[v : Order](env: SearchEnv[v], i: Int32, query: Array[RamTerm[v]], tuple: Tuple[v]): Comparison =
@@ -153,11 +160,9 @@ namespace Fixpoint {
 
     def evalTerm(env: SearchEnv[v], term: RamTerm[v]): v = match term {
         case RamTerm.Lit(v) => v
-        case RamTerm.Attribute(rowVar, index) =>
-            let tuple = Map.getWithDefault(rowVar, ([] as & Pure), env);
-            tuple[index] as & Pure
-        case RamTerm.App(f, args) =>
-            List.map(evalTerm(env), args) |> f
+        case RamTerm.Attribute(RowVar.Index(i), index) => env[i][index] as & Pure
+        case RamTerm.App(f, args) => List.map(evalTerm(env), args) |> f
+        case _ => ???
     }
 
     instance ToString[Model[v]] with [v : ToString] {

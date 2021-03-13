@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-use Fixpoint.{compile, interpret, hoistStmt, queryStmt};
+use Fixpoint.{compile, interpret, hoistStmt, queryStmt, lowerStmt};
 use Fixpoint.Model.Model;
 use Fixpoint/Ast.{HeadTerm, BodyTerm, Polarity};
 use Fixpoint/Ast.Constraint.Constraint;
@@ -79,6 +79,7 @@ pub def benchmark(): Unit & Impure =
         compile(rule1 :: rule2 :: facts) |>
         hoistStmt |>
         queryStmt |>
+        lowerStmt |>
         interpret;
     let path = Map.getWithDefault("Path", Set#{}, db);
     println("Deduced ${Set.size(path)} facts.")

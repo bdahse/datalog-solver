@@ -17,6 +17,7 @@
 namespace Fixpoint/Ram {
     pub enum RowVar {
         case Named(String)
+        case Index(Int32)
     }
 
     instance ToString[RowVar] {
