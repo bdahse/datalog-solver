@@ -22,7 +22,7 @@ namespace Fixpoint/Ram {
     }
 
     instance ToString[RelSym] {
-        def toString(relSym: RelSym): String = match relSym {
+        pub def toString(relSym: RelSym): String = match relSym {
             case Full(name) => name
             case Delta(name) => "Δ${name}"
             case New(name) => "Δ${name}'"
@@ -30,29 +30,29 @@ namespace Fixpoint/Ram {
     }
 
     instance Order[RelSym] {
-        def less(a: RelSym, b: RelSym): Bool = match a <=> b {
+        pub def less(a: RelSym, b: RelSym): Bool = match a <=> b {
             case LessThan => true
             case _ => false
         }
 
-        def lessEqual(a: RelSym, b: RelSym): Bool = match a <=> b {
+        pub def lessEqual(a: RelSym, b: RelSym): Bool = match a <=> b {
             case LessThan => true
             case EqualTo => true
             case _ => false
         }
 
-        def greater(a: RelSym, b: RelSym): Bool = match a <=> b {
+        pub def greater(a: RelSym, b: RelSym): Bool = match a <=> b {
             case GreaterThan => true
             case _ => false
         }
 
-        def greaterEqual(a: RelSym, b: RelSym): Bool = match a <=> b {
+        pub def greaterEqual(a: RelSym, b: RelSym): Bool = match a <=> b {
             case GreaterThan => true
             case EqualTo => true
             case _ => false
         }
 
-        def compare(a: RelSym, b: RelSym): Comparison = match (a, b) {
+        pub def compare(a: RelSym, b: RelSym): Comparison = match (a, b) {
             case (Full(s1), Full(s2))   => s1 <=> s2
             case (Delta(s1), Delta(s2)) => s1 <=> s2
             case (New(s1), New(s2))     => s1 <=> s2

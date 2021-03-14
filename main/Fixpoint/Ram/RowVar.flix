@@ -17,47 +17,48 @@
 namespace Fixpoint/Ram {
     pub enum RowVar {
         case Named(String)
+        case Index(Int32)
     }
 
     instance ToString[RowVar] {
-        def toString(var: RowVar): String = match var {
+        pub def toString(var: RowVar): String = match var {
             case Named(name) => name
         }
     }
 
     instance Eq[RowVar] {
-        def eq(x: RowVar, y: RowVar): Bool = match x <=> y {
+        pub def eq(x: RowVar, y: RowVar): Bool = match x <=> y {
             case EqualTo => true
             case _ => false
         }
 
-        def neq(x: RowVar, y: RowVar): Bool = not (x == y)
+        pub def neq(x: RowVar, y: RowVar): Bool = not (x == y)
     }
 
     instance Order[RowVar] {
-        def less(a: RowVar, b: RowVar): Bool = match a <=> b {
+        pub def less(a: RowVar, b: RowVar): Bool = match a <=> b {
             case LessThan => true
             case _ => false
         }
 
-        def lessEqual(a: RowVar, b: RowVar): Bool = match a <=> b {
+        pub def lessEqual(a: RowVar, b: RowVar): Bool = match a <=> b {
             case LessThan => true
             case EqualTo => true
             case _ => false
         }
 
-        def greater(a: RowVar, b: RowVar): Bool = match a <=> b {
+        pub def greater(a: RowVar, b: RowVar): Bool = match a <=> b {
             case GreaterThan => true
             case _ => false
         }
 
-        def greaterEqual(a: RowVar, b: RowVar): Bool = match a <=> b {
+        pub def greaterEqual(a: RowVar, b: RowVar): Bool = match a <=> b {
             case GreaterThan => true
             case EqualTo => true
             case _ => false
         }
 
-        def compare(a: RowVar, b: RowVar): Comparison = match (a, b) {
+        pub def compare(a: RowVar, b: RowVar): Comparison = match (a, b) {
             case (Named(s1), Named(s2)) => s1 <=> s2
         }
     }

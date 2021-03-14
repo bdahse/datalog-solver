@@ -20,7 +20,7 @@ namespace Fixpoint/Ast {
     }
 
     instance ToString[Constraint[v]] with [v : ToString] {
-        def toString(c: Constraint[v]): String = match c {
+        pub def toString(c: Constraint[v]): String = match c {
             case Constraint(head, Nil, _) => ToString.toString(head)
             case Constraint(head, body, _) =>
                 let atoms = List.map(ToString.toString, body) |> String.intercalate(", ");
