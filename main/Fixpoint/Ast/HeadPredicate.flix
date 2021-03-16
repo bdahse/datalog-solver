@@ -18,17 +18,6 @@ namespace Fixpoint/Ast {
         case HeadAtom(PredSym, Array[HeadTerm[v]], SourceLocation)
     }
 
-    /// def headVars(head: HeadPredicate[v]): Set[VarSym] = match head {
-    ///     case HeadAtom(_, terms, _) => htermVars(terms)
-    /// }
-
-    /// def htermVars[v](terms: List[HeadTerm[v]]): Set[VarSym] =
-    ///     List.foldLeft((acc, t) -> match t {
-    ///         case HeadTerm.Var(var, _) => Set.insert(var, acc)
-    ///         case HeadTerm.App(_, args, _) => Set.union(acc, htermVars(args))
-    ///         case HeadTerm.Lit(_, _) => acc
-    ///     }, Set.empty(), terms)
-
     instance ToString[HeadPredicate[v]] with [v : ToString] {
         pub def toString(head: HeadPredicate[v]): String =
             use Fixpoint.commaSeparate;

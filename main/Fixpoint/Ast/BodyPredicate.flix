@@ -20,23 +20,6 @@ namespace Fixpoint/Ast {
         case GuardAtom(Array[v] -> Bool, Array[BodyTerm[v]], SourceLocation)
     }
 
-    /// def bodyVars(body: List[BodyPredicate[v]]): Set[VarSym] = match polarityVars(body) {
-    ///     case (p, n) => Set.union(p, n)
-    /// }
-
-    /// def polarityVars(body: List[BodyPredicate[v]]): (Set[VarSym], Set[VarSym]) =
-    ///     List.foldLeft((acc, bp) -> match (acc, bp) {
-    ///         case ((p, n), BodyAtom(_, Positive, terms, _)) => (Set.union(p, btermVars(terms)), n)
-    ///         case ((p, n), BodyAtom(_, Negative, terms, _)) => (p, Set.union(n, btermVars(terms)))
-    ///         case (_, GuardAtom(_)) => acc
-    ///     }, (Set.empty(), Set.empty()), body)
-
-    /// def btermVars(terms: List[BodyTerm[v]]): Set[VarSym] =
-    ///     List.foldLeft((acc, t) -> match t {
-    ///         case BodyTerm.Var(var, _) => Set.insert(var, acc)
-    ///         case _ => acc
-    ///     }, Set.empty(), terms)
-
     instance ToString[BodyPredicate[v]] with [v : ToString] {
         pub def toString(body: BodyPredicate[v]): String =
             use Fixpoint.commaSeparate;
