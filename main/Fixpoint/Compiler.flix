@@ -187,9 +187,11 @@ namespace Fixpoint {
 
     /// Return the set of IDB predicates of the given constraint system.
     def idb(cs: Array[Constraint[v]]): Set[PredSym] =
-        Array.foldLeft(acc -> c -> match c {
-            case Constraint(_, [], _) => acc
-            case Constraint(HeadAtom(headPred, _, _), _, _) => Set.insert(headPred, acc)
+        Array.foldLeft(acc -> match Constraint(HeadAtom(headPred, _, _), body, _) -> {
+            if (Array.length(body) == 0)
+                acc
+            else
+                Set.insert(headPred, acc)
         }, Set#{}, cs) as & Pure
 
     def unwrap(o: Option[a]): a = match o {

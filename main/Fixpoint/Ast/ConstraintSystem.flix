@@ -25,7 +25,7 @@ namespace Fixpoint/Ast {
                 let sb = StringBuilder.new();
                 Array.append(facts, rules) |>
                 Array.map(ToString.toString) |>
-                StringBuilder.appendLinesWith!(sb, s -> "${s}.");
+                StringBuilder.appendLines!(sb);
                 StringBuilder.toString(sb)
             };
             toString(cs) as & Pure

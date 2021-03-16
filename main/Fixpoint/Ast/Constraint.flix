@@ -23,8 +23,11 @@ namespace Fixpoint/Ast {
         pub def toString(c: Constraint[v]): String =
             use Fixpoint.commaSeparate;
             match c {
-                case Constraint(head, [], _) => "${head}"
-                case Constraint(head, atoms, _) => "${head} :- ${commaSeparate(atoms)}"
+                case Constraint(head, body, _) =>
+                    if (Array.length(body) == 0)
+                        "${head}."
+                    else
+                        "${head} :- ${commaSeparate(body)}."
             }
     }
 }
