@@ -17,16 +17,16 @@ namespace Fixpoint/Ast {
     pub enum HeadTerm[v] {
         case Var(VarSym, SourceLocation)
         case Lit(v, SourceLocation)
-        case App(List[v] -> v, List[HeadTerm[v]], SourceLocation)
+        case App(Array[v] -> v, Array[HeadTerm[v]], SourceLocation)
     }
 
     instance ToString[HeadTerm[v]] with [v : ToString] {
-        pub def toString(term: HeadTerm[v]): String = match term {
-            case HeadTerm.Var(varSym, _) => ToString.toString(varSym)
-            case HeadTerm.Lit(v, _) => ToString.toString(v)
-            case HeadTerm.App(_, terms, _) =>
-                let args = List.map(ToString.toString, terms) |> String.intercalate(", ");
-                "f(${args})"
-        }
+        pub def toString(term: HeadTerm[v]): String =
+            use Fixpoint.commaSeparate;
+            match term {
+                case HeadTerm.Var(varSym, _) => "${varSym}"
+                case HeadTerm.Lit(v, _) => "${v}$"
+                case HeadTerm.App(_, terms, _) => "f(${commaSeparate(terms)})"
+            }
     }
 }

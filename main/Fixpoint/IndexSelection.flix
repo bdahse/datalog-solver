@@ -108,7 +108,7 @@ namespace Fixpoint {
     def isExpGround(freeVars: Set[RowVar], exp: BoolExp[v]): Bool = match exp {
         case BoolExp.Empty(_) => true
         case BoolExp.NotMemberOf(terms, _) => Array.forall(isTermGround(freeVars), terms) as & Pure
-        case BoolExp.Guard(_, terms) => List.forall(isTermGround(freeVars), terms)
+        case BoolExp.Guard(_, terms) => Array.forall(isTermGround(freeVars), terms) as & Pure
         case BoolExp.Eq(lhs, rhs) => isTermGround(freeVars, lhs) and isTermGround(freeVars, rhs)
     }
 
@@ -116,6 +116,6 @@ namespace Fixpoint {
     def isTermGround(freeVars: Set[RowVar], term: RamTerm[v]): Bool = match term {
         case RamTerm.Lit(_) => true
         case RamTerm.Attribute(var, _) => Set.memberOf(var, freeVars)
-        case RamTerm.App(_, args) => List.forall(isTermGround(freeVars), args)
+        case RamTerm.App(_, args) => Array.forall(isTermGround(freeVars), args) as & Pure
     }
 }

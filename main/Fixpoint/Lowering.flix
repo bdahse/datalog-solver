@@ -21,7 +21,7 @@ use Fixpoint/Ram.{RamStmt, RelOp, RelSym, RamTerm, BoolExp, RowVar};
 /// in where clauses, range queries and project operations.
 namespace Fixpoint {
     pub def lowerStmt(stmt: RamStmt[v]): RamStmt[v] = match stmt {
-        case RamStmt.Insert(op) => RamStmt.Insert(lowerOp(op, Map#{}, 0) as & Pure)
+        case RamStmt.Insert(op) => RamStmt.Insert(lowerOp(op, Map#{}, 0))
         case RamStmt.Merge(_, _) => stmt
         case RamStmt.Assign(_, _) => stmt
         case RamStmt.Purge(_) => stmt
@@ -30,7 +30,7 @@ namespace Fixpoint {
         case RamStmt.Comment(_) => stmt
     }
 
-    def lowerOp(op: RelOp[v], rowVars: Map[RowVar, RowVar], depth: Int32): RelOp[v] & Impure =
+    def lowerOp(op: RelOp[v], rowVars: Map[RowVar, RowVar], depth: Int32): RelOp[v] =
         match op {
             case RelOp.Search(var, relSym, where, body) =>
                 let newVar = RowVar.Index(depth);
@@ -40,20 +40,20 @@ namespace Fixpoint {
             case RelOp.Query(var, relSym, prefixQuery, where, body) =>
                 let newVar = RowVar.Index(depth);
                 let newVars = Map.insert(var, newVar, rowVars);
-                let newQuery = Array.map(lowerTerm(rowVars), prefixQuery);
+                let newQuery = Array.map(lowerTerm(rowVars), prefixQuery) as & Pure;
                 let newWhere = List.map(lowerExp(newVars), where);
                 RelOp.Query(newVar, relSym, newQuery, newWhere, lowerOp(body, newVars, depth + 1))
             case RelOp.Project(terms, relSym) =>
-                 RelOp.Project(Array.map(lowerTerm(rowVars), terms), relSym)
+                 RelOp.Project(Array.map(lowerTerm(rowVars), terms), relSym) as & Pure
         }
 
-    def lowerExp(rowVars: Map[RowVar, RowVar], exp: BoolExp[v]): BoolExp[v] & Impure =
+    def lowerExp(rowVars: Map[RowVar, RowVar], exp: BoolExp[v]): BoolExp[v] =
         match exp {
             case BoolExp.Empty(_) => exp
             case BoolExp.NotMemberOf(terms, relSym) =>
-                 BoolExp.NotMemberOf(Array.map(lowerTerm(rowVars), terms), relSym)
+                 BoolExp.NotMemberOf(Array.map(lowerTerm(rowVars), terms), relSym) as & Pure
             case BoolExp.Guard(f, terms) =>
-                 BoolExp.Guard(f, List.map(lowerTerm(rowVars), terms))
+                 BoolExp.Guard(f, Array.map(lowerTerm(rowVars), terms)) as & Pure
             case BoolExp.Eq(lhs, rhs) =>
                  BoolExp.Eq(lowerTerm(rowVars, lhs), lowerTerm(rowVars, rhs))
         }
@@ -63,6 +63,6 @@ namespace Fixpoint {
         case RamTerm.Attribute(rowVar, index) =>
              RamTerm.Attribute(Map.getWithDefault(rowVar, rowVar, rowVars), index)
         case RamTerm.App(f, terms) =>
-             RamTerm.App(f, List.map(lowerTerm(rowVars), terms))
+             RamTerm.App(f, Array.map(lowerTerm(rowVars), terms)) as & Pure
     }
 }

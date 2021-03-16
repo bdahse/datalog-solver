@@ -13,16 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 namespace Fixpoint/Ast {
-    pub enum HeadPredicate[v] {
-        case HeadAtom(PredSym, Array[HeadTerm[v]], SourceLocation)
+    pub enum ConstraintSystem[v] {
+        case ConstraintSystem(Array[Constraint[v]], Array[Constraint[v]])
     }
 
-    instance ToString[HeadPredicate[v]] with [v : ToString] {
-        pub def toString(head: HeadPredicate[v]): String =
-            use Fixpoint.commaSeparate;
-            match head {
-                case HeadAtom(predSym, terms, _) => "${predSym}(${commaSeparate(terms)})"
-            }
+    instance ToString[ConstraintSystem[v]] with [v : ToString] {
+        pub def toString(cs: ConstraintSystem[v]): String =
+            let toString = match ConstraintSystem(facts, rules) -> {
+                let sb = StringBuilder.new();
+                Array.append(facts, rules) |>
+                Array.map(ToString.toString) |>
+                StringBuilder.appendLines!(sb);
+                StringBuilder.toString(sb)
+            };
+            toString(cs) as & Pure
     }
 }

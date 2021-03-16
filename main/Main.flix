@@ -18,6 +18,7 @@ use Fixpoint.{compile, interpret, hoistStmt, queryStmt, lowerStmt};
 use Fixpoint.Model.Model;
 use Fixpoint/Ast.{HeadTerm, BodyTerm, Polarity};
 use Fixpoint/Ast.Constraint.Constraint;
+use Fixpoint/Ast.ConstraintSystem.ConstraintSystem;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
 use Fixpoint/Ast.BodyPredicate.BodyAtom;
 use Fixpoint/Ast.PredSym.PredSym;
@@ -41,42 +42,40 @@ pub def benchmarkFlix(): Bool =
     (solve facts <+> rules) |= Path(1, 20).
 
 pub def benchmark(): Unit & Impure =
-    let facts =
-        List.range(0, 250) |>
-        List.foldLeft(acc -> i -> {
-            Constraint(HeadAtom(PredSym("Edge", Unknown),
-                                HeadTerm.Lit(i, Unknown) ::
-                                HeadTerm.Lit((i+1) % 250, Unknown) :: Nil, Unknown),
-                        Nil, Unknown) :: acc
-        }, Nil);
+    let facts = Array.init(i -> {
+        Constraint(HeadAtom(PredSym("Edge", Unknown),
+                            [HeadTerm.Lit(i, Unknown),
+                             HeadTerm.Lit((i+1) % 250, Unknown)], Unknown),
+                    [], Unknown)
+    }, 250);
     let rule1 = Constraint(HeadAtom(PredSym("Path", Unknown),
-                                    HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
-                                    HeadTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
+                                    [HeadTerm.Var(VarSym("x", Unknown), Unknown),
+                                     HeadTerm.Var(VarSym("y", Unknown), Unknown)],
                                     Unknown),
-                            BodyAtom(PredSym("Edge", Unknown),
+                            [BodyAtom(PredSym("Edge", Unknown),
                                     Polarity.Positive,
-                                    BodyTerm.Var(VarSym("x", Unknown), Unknown) ::
-                                    BodyTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
-                                    Unknown) :: Nil,
+                                    [BodyTerm.Var(VarSym("x", Unknown), Unknown),
+                                     BodyTerm.Var(VarSym("y", Unknown), Unknown)],
+                                    Unknown)],
                             Unknown);
     let rule2 = Constraint(HeadAtom(PredSym("Path", Unknown),
-                                    HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
-                                    HeadTerm.Var(VarSym("z", Unknown), Unknown) :: Nil,
+                                    [HeadTerm.Var(VarSym("x", Unknown), Unknown),
+                                     HeadTerm.Var(VarSym("z", Unknown), Unknown)],
                                     Unknown),
-                            BodyAtom(PredSym("Edge", Unknown),
+                            [BodyAtom(PredSym("Edge", Unknown),
                                     Polarity.Positive,
-                                    BodyTerm.Var(VarSym("x", Unknown), Unknown) ::
-                                    BodyTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
-                                    Unknown) ::
+                                    [BodyTerm.Var(VarSym("x", Unknown), Unknown),
+                                     BodyTerm.Var(VarSym("y", Unknown), Unknown)],
+                                    Unknown),
                             BodyAtom(PredSym("Path", Unknown),
                                     Polarity.Positive,
-                                    BodyTerm.Var(VarSym("y", Unknown), Unknown) ::
-                                    BodyTerm.Var(VarSym("z", Unknown), Unknown) :: Nil,
-                                    Unknown) :: Nil,
+                                    [BodyTerm.Var(VarSym("y", Unknown), Unknown),
+                                     BodyTerm.Var(VarSym("z", Unknown), Unknown)],
+                                    Unknown)],
                             Unknown);
     let Model(db) =
         Map#{PredSym("Path", Unknown) -> 0} |>
-        compile(rule1 :: rule2 :: facts) |>
+        compile(ConstraintSystem(facts, [rule1, rule2])) |>
         hoistStmt |>
         queryStmt |>
         lowerStmt |>
