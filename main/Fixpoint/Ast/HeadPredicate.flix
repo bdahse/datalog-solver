@@ -15,25 +15,25 @@
  */
 namespace Fixpoint/Ast {
     pub enum HeadPredicate[v] {
-        case HeadAtom(PredSym, List[HeadTerm[v]], SourceLocation)
+        case HeadAtom(PredSym, Array[HeadTerm[v]], SourceLocation)
     }
 
-    def headVars(head: HeadPredicate[v]): Set[VarSym] = match head {
-        case HeadAtom(_, terms, _) => htermVars(terms)
-    }
+    /// def headVars(head: HeadPredicate[v]): Set[VarSym] = match head {
+    ///     case HeadAtom(_, terms, _) => htermVars(terms)
+    /// }
 
-    def htermVars[v](terms: List[HeadTerm[v]]): Set[VarSym] =
-        List.foldLeft((acc, t) -> match t {
-            case HeadTerm.Var(var, _) => Set.insert(var, acc)
-            case HeadTerm.App(_, args, _) => Set.union(acc, htermVars(args))
-            case HeadTerm.Lit(_, _) => acc
-        }, Set.empty(), terms)
+    /// def htermVars[v](terms: List[HeadTerm[v]]): Set[VarSym] =
+    ///     List.foldLeft((acc, t) -> match t {
+    ///         case HeadTerm.Var(var, _) => Set.insert(var, acc)
+    ///         case HeadTerm.App(_, args, _) => Set.union(acc, htermVars(args))
+    ///         case HeadTerm.Lit(_, _) => acc
+    ///     }, Set.empty(), terms)
 
     instance ToString[HeadPredicate[v]] with [v : ToString] {
-        pub def toString(head: HeadPredicate[v]): String = match head {
-            case HeadAtom(predSym, terms, _) =>
-                let ts = List.map(ToString.toString, terms) |> String.intercalate(", ");
-                "${predSym}(${ts})"
-        }
+        pub def toString(head: HeadPredicate[v]): String =
+            use Fixpoint.commaSeparate;
+            match head {
+                case HeadAtom(predSym, terms, _) => "${predSym}(${commaSeparate(terms)})"
+            }
     }
 }

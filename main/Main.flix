@@ -40,50 +40,50 @@ pub def benchmarkFlix(): Bool =
     };
     (solve facts <+> rules) |= Path(1, 20).
 
-pub def benchmark(): Unit & Impure =
-    let facts =
-        List.range(0, 250) |>
-        List.foldLeft(acc -> i -> {
-            Constraint(HeadAtom(PredSym("Edge", Unknown),
-                                HeadTerm.Lit(i, Unknown) ::
-                                HeadTerm.Lit((i+1) % 250, Unknown) :: Nil, Unknown),
-                        Nil, Unknown) :: acc
-        }, Nil);
-    let rule1 = Constraint(HeadAtom(PredSym("Path", Unknown),
-                                    HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
-                                    HeadTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
-                                    Unknown),
-                            BodyAtom(PredSym("Edge", Unknown),
-                                    Polarity.Positive,
-                                    BodyTerm.Var(VarSym("x", Unknown), Unknown) ::
-                                    BodyTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
-                                    Unknown) :: Nil,
-                            Unknown);
-    let rule2 = Constraint(HeadAtom(PredSym("Path", Unknown),
-                                    HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
-                                    HeadTerm.Var(VarSym("z", Unknown), Unknown) :: Nil,
-                                    Unknown),
-                            BodyAtom(PredSym("Edge", Unknown),
-                                    Polarity.Positive,
-                                    BodyTerm.Var(VarSym("x", Unknown), Unknown) ::
-                                    BodyTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
-                                    Unknown) ::
-                            BodyAtom(PredSym("Path", Unknown),
-                                    Polarity.Positive,
-                                    BodyTerm.Var(VarSym("y", Unknown), Unknown) ::
-                                    BodyTerm.Var(VarSym("z", Unknown), Unknown) :: Nil,
-                                    Unknown) :: Nil,
-                            Unknown);
-    let Model(db) =
-        Map#{PredSym("Path", Unknown) -> 0} |>
-        compile(rule1 :: rule2 :: facts) |>
-        hoistStmt |>
-        queryStmt |>
-        lowerStmt |>
-        interpret;
-    let path = Map.getWithDefault("Path", Set#{}, db);
-    println("Deduced ${Set.size(path)} facts.")
+/// pub def benchmark(): Unit & Impure =
+///     let facts =
+///         List.range(0, 250) |>
+///         List.foldLeft(acc -> i -> {
+///             Constraint(HeadAtom(PredSym("Edge", Unknown),
+///                                 HeadTerm.Lit(i, Unknown) ::
+///                                 HeadTerm.Lit((i+1) % 250, Unknown) :: Nil, Unknown),
+///                         Nil, Unknown) :: acc
+///         }, Nil);
+///     let rule1 = Constraint(HeadAtom(PredSym("Path", Unknown),
+///                                     HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
+///                                     HeadTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
+///                                     Unknown),
+///                             BodyAtom(PredSym("Edge", Unknown),
+///                                     Polarity.Positive,
+///                                     BodyTerm.Var(VarSym("x", Unknown), Unknown) ::
+///                                     BodyTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
+///                                     Unknown) :: Nil,
+///                             Unknown);
+///     let rule2 = Constraint(HeadAtom(PredSym("Path", Unknown),
+///                                     HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
+///                                     HeadTerm.Var(VarSym("z", Unknown), Unknown) :: Nil,
+///                                     Unknown),
+///                             BodyAtom(PredSym("Edge", Unknown),
+///                                     Polarity.Positive,
+///                                     BodyTerm.Var(VarSym("x", Unknown), Unknown) ::
+///                                     BodyTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
+///                                     Unknown) ::
+///                             BodyAtom(PredSym("Path", Unknown),
+///                                     Polarity.Positive,
+///                                     BodyTerm.Var(VarSym("y", Unknown), Unknown) ::
+///                                     BodyTerm.Var(VarSym("z", Unknown), Unknown) :: Nil,
+///                                     Unknown) :: Nil,
+///                             Unknown);
+///     let Model(db) =
+///         Map#{PredSym("Path", Unknown) -> 0} |>
+///         compile(rule1 :: rule2 :: facts) |>
+///         hoistStmt |>
+///         queryStmt |>
+///         lowerStmt |>
+///         interpret;
+///     let path = Map.getWithDefault("Path", Set#{}, db);
+///     println("Deduced ${Set.size(path)} facts.")
 
 def main(_args: Array[String]): Int32 & Impure =
-    benchmark();
+    benchmarkFlix() as & Impure;
     0

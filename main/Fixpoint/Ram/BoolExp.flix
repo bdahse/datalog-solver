@@ -18,21 +18,18 @@ namespace Fixpoint/Ram {
     pub enum BoolExp[v] {
         case Empty(RelSym)
         case NotMemberOf(Array[RamTerm[v]], RelSym)
-        case Guard(List[v] -> Bool, List[RamTerm[v]])
+        case Guard(Array[v] -> Bool, Array[RamTerm[v]])
         case Eq(RamTerm[v], RamTerm[v])
     }
 
     instance ToString[BoolExp[v]] with [v : ToString] {
-        pub def toString(exp: BoolExp[v]): String = match exp {
-            case Empty(relSym) => "${relSym} = ∅"
-            case NotMemberOf(terms, relSym) =>
-                let ts = Array.toList(terms) as & Pure;
-                let tuple = List.map(ToString.toString, ts) |> String.intercalate(", ");
-                "(${tuple}) ∉ ${relSym}"
-            case Guard(_, terms) =>
-                let ts = List.map(ToString.toString, terms) |> String.intercalate(", ");
-                "f(${ts})"
-            case Eq(lhs, rhs) => "${lhs} = ${rhs}"
-        }
+        pub def toString(exp: BoolExp[v]): String =
+            use Fixpoint.commaSeparate;
+            match exp {
+                case Empty(relSym) => "${relSym} = ∅"
+                case NotMemberOf(terms, relSym) => "(${commaSeparate(terms)}) ∉ ${relSym}"
+                case Guard(_, terms) => "f(${commaSeparate(terms)})"
+                case Eq(lhs, rhs) => "${lhs} = ${rhs}"
+            }
     }
 }

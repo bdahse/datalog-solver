@@ -15,15 +15,19 @@
  */
 
 namespace Fixpoint/Ast {
-    /// pub def isRangeRestricted(cs: List[Constraint[v]]): Bool =
-    ///     List.forall(c -> match c {
-    ///         case Constraint(head, body, _) => headVars(head) `Set.isSubsetOf` bodyVars(body)
-    ///     }, cs)
+    pub enum ConstraintSystem[v] {
+        case ConstraintSystem(Array[Constraint[v]], Array[Constraint[v]])
+    }
 
-    /// pub def nonPositivelyBoundVar(cs: List[Constraint[v]]): Bool =
-    ///     List.forall(c -> match c {
-    ///         case Constraint(_, body, _) => match polarityVars(body) {
-    ///             case (positive, negative)  => negative `Set.isSubsetOf` positive
-    ///         }
-    ///     }, cs)
+    instance ToString[ConstraintSystem[v]] with [v : ToString] {
+        pub def toString(cs: ConstraintSystem[v]): String =
+            let toString = match ConstraintSystem(facts, rules) -> {
+                let sb = StringBuilder.new();
+                Array.append(facts, rules) |>
+                Array.map(ToString.toString) |>
+                StringBuilder.appendLinesWith!(sb, s -> "${s}.");
+                StringBuilder.toString(sb)
+            };
+            toString(cs) as & Pure
+    }
 }

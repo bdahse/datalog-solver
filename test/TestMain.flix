@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-use Fixpoint/Ast.{Constraint, HeadTerm, BodyTerm};
+use Fixpoint/Ast.{ConstraintSystem, Constraint, HeadTerm, BodyTerm};
+use Fixpoint/Ast.ConstraintSystem.ConstraintSystem;
 use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
 use Fixpoint/Ast.BodyPredicate.{BodyAtom, GuardAtom};
@@ -33,31 +34,31 @@ pub def test01(): Bool & Impure =
     /// Famous("Joakim").
     /// Happy(person) :- Rich(person), Famous(person).
     let fact1 = Constraint(HeadAtom(PredSym("Rich", Unknown),
-                                    HeadTerm.Lit("Magnus", Unknown) :: Nil, Unknown),
-                            Nil, Unknown);
+                                    [HeadTerm.Lit("Magnus", Unknown)], Unknown),
+                            [], Unknown);
     let fact2 = Constraint(HeadAtom(PredSym("Age", Unknown),
-                                    HeadTerm.Lit("34", Unknown) :: Nil, Unknown),
-                            Nil, Unknown);
+                                    [HeadTerm.Lit("34", Unknown)], Unknown),
+                            [], Unknown);
     let fact3 = Constraint(HeadAtom(PredSym("Rich", Unknown),
-                                    HeadTerm.Lit("Joakim", Unknown) :: Nil, Unknown),
-                            Nil, Unknown);
+                                    [HeadTerm.Lit("Joakim", Unknown)], Unknown),
+                            [], Unknown);
     let fact4 = Constraint(HeadAtom(PredSym("Famous", Unknown),
-                                    HeadTerm.Lit("Joakim", Unknown) :: Nil, Unknown),
-                            Nil, Unknown);
+                                    [HeadTerm.Lit("Joakim", Unknown)], Unknown),
+                            [], Unknown);
     let rule1 = Constraint(HeadAtom(PredSym("Happy", Unknown),
-                                    HeadTerm.Var(VarSym("person", Unknown), Unknown) :: Nil,
+                                    [HeadTerm.Var(VarSym("person", Unknown), Unknown)],
                                     Unknown),
-                            BodyAtom(PredSym("Rich", Unknown),
+                            [BodyAtom(PredSym("Rich", Unknown),
                                     Positive,
-                                    BodyTerm.Var(VarSym("person", Unknown), Unknown) :: Nil,
-                                    Unknown) ::
+                                    [BodyTerm.Var(VarSym("person", Unknown), Unknown)],
+                                    Unknown),
                             BodyAtom(PredSym("Famous", Unknown),
                                     Positive,
-                                    BodyTerm.Var(VarSym("person", Unknown), Unknown) :: Nil,
-                                    Unknown) :: Nil,
+                                    [BodyTerm.Var(VarSym("person", Unknown), Unknown)],
+                                    Unknown)],
                             Unknown);
     Map#{PredSym("Happy", Unknown) -> 0} |>
-    compile(fact1 :: fact2 :: fact3 :: fact4 :: rule1 :: Nil) |>
+    compile(ConstraintSystem([fact1, fact2, fact3, fact4], [rule1])) |>
     hoistStmt |>
     queryStmt |>
     lowerStmt |>
@@ -77,96 +78,96 @@ pub def test02() : Bool & Impure =
     /// Unconnected(x, y) :- Vertex(x), Vertex(y), not Path(x, y).
     /// AntiSymmetric(x, y) :- Path(x, y), not Path(y, x).
     let fact1 = Constraint(HeadAtom(PredSym("Edge", Unknown),
-                                    HeadTerm.Lit("A", Unknown) ::
-                                    HeadTerm.Lit("B", Unknown) :: Nil, Unknown),
-                            Nil, Unknown);
+                                    [HeadTerm.Lit("A", Unknown),
+                                     HeadTerm.Lit("B", Unknown)], Unknown),
+                            [], Unknown);
     let fact2 = Constraint(HeadAtom(PredSym("Edge", Unknown),
-                                    HeadTerm.Lit("B", Unknown) ::
-                                    HeadTerm.Lit("C", Unknown) :: Nil, Unknown),
-                            Nil, Unknown);
+                                    [HeadTerm.Lit("B", Unknown),
+                                     HeadTerm.Lit("C", Unknown)], Unknown),
+                            [], Unknown);
     let fact3 = Constraint(HeadAtom(PredSym("Edge", Unknown),
-                                    HeadTerm.Lit("C", Unknown) ::
-                                    HeadTerm.Lit("D", Unknown) :: Nil, Unknown),
-                            Nil, Unknown);
+                                    [HeadTerm.Lit("C", Unknown),
+                                     HeadTerm.Lit("D", Unknown)], Unknown),
+                            [], Unknown);
     let fact4 = Constraint(HeadAtom(PredSym("Edge", Unknown),
-                                    HeadTerm.Lit("D", Unknown) ::
-                                    HeadTerm.Lit("B", Unknown) :: Nil, Unknown),
-                            Nil, Unknown);
+                                    [HeadTerm.Lit("D", Unknown),
+                                     HeadTerm.Lit("B", Unknown)], Unknown),
+                            [], Unknown);
     let rule1 = Constraint(HeadAtom(PredSym("Vertex", Unknown),
-                                    HeadTerm.Var(VarSym("x", Unknown), Unknown) :: Nil,
+                                    [HeadTerm.Var(VarSym("x", Unknown), Unknown)],
                                     Unknown),
-                            BodyAtom(PredSym("Edge", Unknown),
+                            [BodyAtom(PredSym("Edge", Unknown),
                                     Positive,
-                                    BodyTerm.Var(VarSym("x", Unknown), Unknown) ::
-                                    BodyTerm.Var(VarSym("_", Unknown), Unknown) :: Nil,
-                                    Unknown) :: Nil,
+                                    [BodyTerm.Var(VarSym("x", Unknown), Unknown),
+                                     BodyTerm.Var(VarSym("_", Unknown), Unknown)],
+                                    Unknown)],
                             Unknown);
     let rule2 = Constraint(HeadAtom(PredSym("Vertex", Unknown),
-                                    HeadTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
+                                    [HeadTerm.Var(VarSym("y", Unknown), Unknown)],
                                     Unknown),
-                            BodyAtom(PredSym("Edge", Unknown),
+                            [BodyAtom(PredSym("Edge", Unknown),
                                     Positive,
-                                    BodyTerm.Var(VarSym("_", Unknown), Unknown) ::
-                                    BodyTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
-                                    Unknown) :: Nil,
+                                    [BodyTerm.Var(VarSym("_", Unknown), Unknown),
+                                     BodyTerm.Var(VarSym("y", Unknown), Unknown)],
+                                    Unknown)],
                             Unknown);
     let rule3 = Constraint(HeadAtom(PredSym("Path", Unknown),
-                                    HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
-                                    HeadTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
+                                    [HeadTerm.Var(VarSym("x", Unknown), Unknown),
+                                     HeadTerm.Var(VarSym("y", Unknown), Unknown)],
                                     Unknown),
-                            BodyAtom(PredSym("Edge", Unknown),
+                            [BodyAtom(PredSym("Edge", Unknown),
                                     Positive,
-                                    BodyTerm.Var(VarSym("x", Unknown), Unknown) ::
-                                    BodyTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
-                                    Unknown) :: Nil,
+                                    [BodyTerm.Var(VarSym("x", Unknown), Unknown),
+                                     BodyTerm.Var(VarSym("y", Unknown), Unknown)],
+                                    Unknown)],
                             Unknown);
     let rule4 = Constraint(HeadAtom(PredSym("Path", Unknown),
-                                    HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
-                                    HeadTerm.Var(VarSym("z", Unknown), Unknown) :: Nil,
+                                    [HeadTerm.Var(VarSym("x", Unknown), Unknown),
+                                     HeadTerm.Var(VarSym("z", Unknown), Unknown)],
                                     Unknown),
-                            BodyAtom(PredSym("Path", Unknown),
+                            [BodyAtom(PredSym("Path", Unknown),
                                     Positive,
-                                    BodyTerm.Var(VarSym("x", Unknown), Unknown) ::
-                                    BodyTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
-                                    Unknown) ::
+                                    [BodyTerm.Var(VarSym("x", Unknown), Unknown),
+                                     BodyTerm.Var(VarSym("y", Unknown), Unknown)],
+                                    Unknown),
                             BodyAtom(PredSym("Edge", Unknown),
                                     Positive,
-                                    BodyTerm.Var(VarSym("y", Unknown), Unknown) ::
-                                    BodyTerm.Var(VarSym("z", Unknown), Unknown) :: Nil,
-                                    Unknown) :: Nil,
+                                    [BodyTerm.Var(VarSym("y", Unknown), Unknown),
+                                     BodyTerm.Var(VarSym("z", Unknown), Unknown)],
+                                    Unknown)],
                             Unknown);
     let rule5 = Constraint(HeadAtom(PredSym("Unconnected", Unknown),
-                                    HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
-                                    HeadTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
+                                    [HeadTerm.Var(VarSym("x", Unknown), Unknown),
+                                     HeadTerm.Var(VarSym("y", Unknown), Unknown)],
+                                    Unknown),
+                            [BodyAtom(PredSym("Vertex", Unknown),
+                                    Positive,
+                                    [BodyTerm.Var(VarSym("x", Unknown), Unknown)],
                                     Unknown),
                             BodyAtom(PredSym("Vertex", Unknown),
                                     Positive,
-                                    BodyTerm.Var(VarSym("x", Unknown), Unknown) :: Nil,
-                                    Unknown) ::
-                            BodyAtom(PredSym("Vertex", Unknown),
-                                    Positive,
-                                    BodyTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
-                                    Unknown) ::
+                                    [BodyTerm.Var(VarSym("y", Unknown), Unknown)],
+                                    Unknown),
                             BodyAtom(PredSym("Path", Unknown),
                                     Negative,
-                                    BodyTerm.Var(VarSym("x", Unknown), Unknown) ::
-                                    BodyTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
-                                    Unknown) :: Nil,
+                                    [BodyTerm.Var(VarSym("x", Unknown), Unknown),
+                                     BodyTerm.Var(VarSym("y", Unknown), Unknown)],
+                                    Unknown)],
                             Unknown);
     let rule6 = Constraint(HeadAtom(PredSym("AntiSymmetric", Unknown),
-                                    HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
-                                    HeadTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
+                                    [HeadTerm.Var(VarSym("x", Unknown), Unknown),
+                                     HeadTerm.Var(VarSym("y", Unknown), Unknown)],
+                                    Unknown),
+                            [BodyAtom(PredSym("Path", Unknown),
+                                    Positive,
+                                    [BodyTerm.Var(VarSym("x", Unknown), Unknown),
+                                     BodyTerm.Var(VarSym("y", Unknown), Unknown)],
                                     Unknown),
                             BodyAtom(PredSym("Path", Unknown),
-                                    Positive,
-                                    BodyTerm.Var(VarSym("x", Unknown), Unknown) ::
-                                    BodyTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
-                                    Unknown) ::
-                            BodyAtom(PredSym("Path", Unknown),
                                     Negative,
-                                    BodyTerm.Var(VarSym("y", Unknown), Unknown) ::
-                                    BodyTerm.Var(VarSym("x", Unknown), Unknown) :: Nil,
-                                    Unknown) :: Nil,
+                                    [BodyTerm.Var(VarSym("y", Unknown), Unknown),
+                                     BodyTerm.Var(VarSym("x", Unknown), Unknown)],
+                                    Unknown)],
                             Unknown);
     Map#{
         PredSym("Vertex", Unknown) -> 0,
@@ -174,7 +175,7 @@ pub def test02() : Bool & Impure =
         PredSym("Unconnected", Unknown) -> 1,
         PredSym("AntiSymmetric", Unknown) -> 1
     } |>
-    compile(fact1 :: fact2 :: fact3 :: fact4 :: rule1 :: rule2 :: rule3 :: rule4 :: rule5 :: rule6 :: Nil) |>
+    compile(ConstraintSystem([fact1, fact2, fact3, fact4], [rule1, rule2, rule3, rule4, rule5, rule6])) |>
     hoistStmt |>
     queryStmt |>
     lowerStmt |>
@@ -190,47 +191,49 @@ pub def test03(): Bool & Impure =
     /// Sum(f(x, 0)) :- Number(x).
     /// Sum(f(x, y)) :- Number(x), Number(y).
     let f = args -> match args {
-        case x :: y :: Nil => "${x} + ${y}"
+        case [x, y] => "${x} + ${y}"
         case _ => "0"
     };
     let fact1 = Constraint(HeadAtom(PredSym("Number", Unknown),
-                                    HeadTerm.Lit("2", Unknown) :: Nil, Unknown),
-                            Nil, Unknown);
+                                    [HeadTerm.Lit("2", Unknown)], Unknown),
+                            [], Unknown);
     let fact2 = Constraint(HeadAtom(PredSym("Number", Unknown),
-                                    HeadTerm.Lit("3", Unknown) :: Nil, Unknown),
-                            Nil, Unknown);
+                                    [HeadTerm.Lit("3", Unknown)], Unknown),
+                            [], Unknown);
     let fact3 = Constraint(HeadAtom(PredSym("Number", Unknown),
-                                    HeadTerm.Lit("5", Unknown) :: Nil, Unknown),
-                            Nil, Unknown);
+                                    [HeadTerm.Lit("5", Unknown)], Unknown),
+                            [], Unknown);
     let fact4 = Constraint(HeadAtom(PredSym("Number", Unknown),
-                                    HeadTerm.Lit("7", Unknown) :: Nil, Unknown),
-                            Nil, Unknown);
+                                    [HeadTerm.Lit("7", Unknown)], Unknown),
+                            [], Unknown);
     let rule1 = Constraint(HeadAtom(PredSym("Sum", Unknown),
-                                    HeadTerm.App(f, HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
-                                                    HeadTerm.Lit("0", Unknown) :: Nil,
-                                                Unknown) :: Nil,
+                                    [HeadTerm.App(f,
+                                                [HeadTerm.Var(VarSym("x", Unknown), Unknown),
+                                                HeadTerm.Lit("0", Unknown)],
+                                                Unknown)],
                                     Unknown),
-                            BodyAtom(PredSym("Number", Unknown),
+                            [BodyAtom(PredSym("Number", Unknown),
                                     Positive,
-                                    BodyTerm.Var(VarSym("x", Unknown), Unknown) :: Nil,
-                                    Unknown) :: Nil,
+                                    [BodyTerm.Var(VarSym("x", Unknown), Unknown)],
+                                    Unknown)],
                             Unknown);
     let rule2 = Constraint(HeadAtom(PredSym("Sum", Unknown),
-                                    HeadTerm.App(f, HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
-                                                    HeadTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
-                                                Unknown) :: Nil,
+                                    [HeadTerm.App(f,
+                                                [HeadTerm.Var(VarSym("x", Unknown), Unknown),
+                                                 HeadTerm.Var(VarSym("y", Unknown), Unknown)],
+                                                Unknown)],
+                                    Unknown),
+                            [BodyAtom(PredSym("Number", Unknown),
+                                    Positive,
+                                    [BodyTerm.Var(VarSym("x", Unknown), Unknown)],
                                     Unknown),
                             BodyAtom(PredSym("Number", Unknown),
                                     Positive,
-                                    BodyTerm.Var(VarSym("x", Unknown), Unknown) :: Nil,
-                                    Unknown) ::
-                            BodyAtom(PredSym("Number", Unknown),
-                                    Positive,
-                                    BodyTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
-                                    Unknown) :: Nil,
+                                    [BodyTerm.Var(VarSym("y", Unknown), Unknown)],
+                                    Unknown)],
                             Unknown);
     Map#{PredSym("Sum", Unknown) -> 0} |>
-    compile(fact1 :: fact2 :: fact3 :: fact4 :: rule1 :: rule2 :: Nil) |>
+    compile(ConstraintSystem([fact1, fact2, fact3, fact4], [rule1, rule2])) |>
     hoistStmt |>
     queryStmt |>
     lowerStmt |>
@@ -246,64 +249,64 @@ pub def test04(): Bool & Impure =
     /// Path(x, y) :- Edge(x, speedLimit, y), if speedLimit >= 70.
     /// Path(x, z) :- Path(x, y), Edge(y, speedLimit, z), if speedLimit >= 70.
     let f = args -> match args {
-        case x :: Nil => x >= "070"
+        case [x] => x >= "070"
         case _ => false
     };
     let fact1 = Constraint(HeadAtom(PredSym("Edge", Unknown),
-                                    HeadTerm.Lit("A", Unknown) ::
-                                    HeadTerm.Lit("080", Unknown) ::
-                                    HeadTerm.Lit("B", Unknown) :: Nil, Unknown),
-                            Nil, Unknown);
+                                    [HeadTerm.Lit("A", Unknown),
+                                     HeadTerm.Lit("080", Unknown),
+                                     HeadTerm.Lit("B", Unknown)], Unknown),
+                            [], Unknown);
     let fact2 = Constraint(HeadAtom(PredSym("Edge", Unknown),
-                                    HeadTerm.Lit("B", Unknown) ::
-                                    HeadTerm.Lit("070", Unknown) ::
-                                    HeadTerm.Lit("C", Unknown) :: Nil, Unknown),
-                            Nil, Unknown);
+                                    [HeadTerm.Lit("B", Unknown),
+                                     HeadTerm.Lit("070", Unknown),
+                                     HeadTerm.Lit("C", Unknown)], Unknown),
+                            [], Unknown);
     let fact3 = Constraint(HeadAtom(PredSym("Edge", Unknown),
-                                    HeadTerm.Lit("C", Unknown) ::
-                                    HeadTerm.Lit("110", Unknown) ::
-                                    HeadTerm.Lit("D", Unknown) :: Nil, Unknown),
-                            Nil, Unknown);
+                                    [HeadTerm.Lit("C", Unknown),
+                                     HeadTerm.Lit("110", Unknown),
+                                     HeadTerm.Lit("D", Unknown)], Unknown),
+                            [], Unknown);
     let fact4 = Constraint(HeadAtom(PredSym("Edge", Unknown),
-                                    HeadTerm.Lit("D", Unknown) ::
-                                    HeadTerm.Lit("050", Unknown) ::
-                                    HeadTerm.Lit("B", Unknown) :: Nil, Unknown),
-                            Nil, Unknown);
+                                    [HeadTerm.Lit("D", Unknown),
+                                     HeadTerm.Lit("050", Unknown),
+                                     HeadTerm.Lit("B", Unknown)], Unknown),
+                            [], Unknown);
     let rule1 = Constraint(HeadAtom(PredSym("Path", Unknown),
-                                    HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
-                                    HeadTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
+                                    [HeadTerm.Var(VarSym("x", Unknown), Unknown),
+                                     HeadTerm.Var(VarSym("y", Unknown), Unknown)],
                                     Unknown),
-                            BodyAtom(PredSym("Edge", Unknown),
+                            [BodyAtom(PredSym("Edge", Unknown),
                                     Positive,
-                                    BodyTerm.Var(VarSym("x", Unknown), Unknown) ::
-                                    BodyTerm.Var(VarSym("speedLimit", Unknown), Unknown) ::
-                                    BodyTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
-                                    Unknown) ::
+                                    [BodyTerm.Var(VarSym("x", Unknown), Unknown),
+                                     BodyTerm.Var(VarSym("speedLimit", Unknown), Unknown),
+                                     BodyTerm.Var(VarSym("y", Unknown), Unknown)],
+                                    Unknown),
                             GuardAtom(f,
-                                    BodyTerm.Var(VarSym("speedLimit", Unknown), Unknown) :: Nil,
-                                    Unknown) :: Nil,
+                                    [BodyTerm.Var(VarSym("speedLimit", Unknown), Unknown)],
+                                    Unknown)],
                             Unknown);
     let rule2 = Constraint(HeadAtom(PredSym("Path", Unknown),
-                                    HeadTerm.Var(VarSym("x", Unknown), Unknown) ::
-                                    HeadTerm.Var(VarSym("z", Unknown), Unknown) :: Nil,
+                                    [HeadTerm.Var(VarSym("x", Unknown), Unknown),
+                                     HeadTerm.Var(VarSym("z", Unknown), Unknown)],
                                     Unknown),
-                            BodyAtom(PredSym("Path", Unknown),
+                            [BodyAtom(PredSym("Path", Unknown),
                                     Positive,
-                                    BodyTerm.Var(VarSym("x", Unknown), Unknown) ::
-                                    BodyTerm.Var(VarSym("y", Unknown), Unknown) :: Nil,
-                                    Unknown) ::
+                                    [BodyTerm.Var(VarSym("x", Unknown), Unknown),
+                                     BodyTerm.Var(VarSym("y", Unknown), Unknown)],
+                                    Unknown),
                             BodyAtom(PredSym("Edge", Unknown),
                                     Positive,
-                                    BodyTerm.Var(VarSym("y", Unknown), Unknown) ::
-                                    BodyTerm.Var(VarSym("speedLimit", Unknown), Unknown) ::
-                                    BodyTerm.Var(VarSym("z", Unknown), Unknown) :: Nil,
-                                    Unknown) ::
+                                    [BodyTerm.Var(VarSym("y", Unknown), Unknown),
+                                     BodyTerm.Var(VarSym("speedLimit", Unknown), Unknown),
+                                     BodyTerm.Var(VarSym("z", Unknown), Unknown)],
+                                    Unknown),
                             GuardAtom(f,
-                                    BodyTerm.Var(VarSym("speedLimit", Unknown), Unknown) :: Nil,
-                                    Unknown) :: Nil,
+                                    [BodyTerm.Var(VarSym("speedLimit", Unknown), Unknown)],
+                                    Unknown)],
                             Unknown);
     Map#{PredSym("Path", Unknown) -> 0} |>
-    compile(fact1 :: fact2 :: fact3 :: fact4 :: rule1 :: rule2 :: Nil) |>
+    compile(ConstraintSystem([fact1, fact2, fact3, fact4], [rule1, rule2])) |>
     hoistStmt |>
     queryStmt |>
     lowerStmt |>

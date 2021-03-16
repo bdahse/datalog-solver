@@ -21,11 +21,11 @@ namespace Fixpoint/Ast {
         case NegativeEdge(BodyPredicate[v], HeadPredicate[v])
     }
 
-    pub def precedence(cs: List[Constraint[v]]): PrecedenceGraph[v] =
+    pub def precedence(cs: List[Constraint[v]]): PrecedenceGraph[v] & Impure =
         List.map(precedenceHelper, cs) |> List.fold
 
-    def precedenceHelper(cnst: Constraint[v]): PrecedenceGraph[v] = match cnst {
-        case Constraint(head, body, _) => List.map(mkDepEdge(head), body) |> List.fold
+    def precedenceHelper(cnst: Constraint[v]): PrecedenceGraph[v] & Impure = match cnst {
+        case Constraint(head, body, _) => Array.map(mkDepEdge(head), body) |> Array.fold
     }
 
     def mkDepEdge(dst: HeadPredicate[v], src: BodyPredicate[v]): PrecedenceGraph[v] = match src {

@@ -16,38 +16,34 @@
 
 namespace Fixpoint/Ast {
     pub enum BodyPredicate[v] {
-        case BodyAtom(PredSym, Polarity, List[BodyTerm[v]], SourceLocation)
-        case GuardAtom(List[v] -> Bool, List[BodyTerm[v]], SourceLocation)
+        case BodyAtom(PredSym, Polarity, Array[BodyTerm[v]], SourceLocation)
+        case GuardAtom(Array[v] -> Bool, Array[BodyTerm[v]], SourceLocation)
     }
 
-    def bodyVars(body: List[BodyPredicate[v]]): Set[VarSym] = match polarityVars(body) {
-        case (p, n) => Set.union(p, n)
-    }
+    /// def bodyVars(body: List[BodyPredicate[v]]): Set[VarSym] = match polarityVars(body) {
+    ///     case (p, n) => Set.union(p, n)
+    /// }
 
-    def polarityVars(body: List[BodyPredicate[v]]): (Set[VarSym], Set[VarSym]) =
-        List.foldLeft((acc, bp) -> match (acc, bp) {
-            case ((p, n), BodyAtom(_, Positive, terms, _)) => (Set.union(p, btermVars(terms)), n)
-            case ((p, n), BodyAtom(_, Negative, terms, _)) => (p, Set.union(n, btermVars(terms)))
-            case (_, GuardAtom(_)) => acc
-        }, (Set.empty(), Set.empty()), body)
+    /// def polarityVars(body: List[BodyPredicate[v]]): (Set[VarSym], Set[VarSym]) =
+    ///     List.foldLeft((acc, bp) -> match (acc, bp) {
+    ///         case ((p, n), BodyAtom(_, Positive, terms, _)) => (Set.union(p, btermVars(terms)), n)
+    ///         case ((p, n), BodyAtom(_, Negative, terms, _)) => (p, Set.union(n, btermVars(terms)))
+    ///         case (_, GuardAtom(_)) => acc
+    ///     }, (Set.empty(), Set.empty()), body)
 
-    def btermVars(terms: List[BodyTerm[v]]): Set[VarSym] =
-        List.foldLeft((acc, t) -> match t {
-            case BodyTerm.Var(var, _) => Set.insert(var, acc)
-            case _ => acc
-        }, Set.empty(), terms)
+    /// def btermVars(terms: List[BodyTerm[v]]): Set[VarSym] =
+    ///     List.foldLeft((acc, t) -> match t {
+    ///         case BodyTerm.Var(var, _) => Set.insert(var, acc)
+    ///         case _ => acc
+    ///     }, Set.empty(), terms)
 
     instance ToString[BodyPredicate[v]] with [v : ToString] {
-        pub def toString(body: BodyPredicate[v]): String = match body {
-            case BodyAtom(predSym, Positive, terms, _) =>
-                let ts = List.map(ToString.toString, terms) |> String.intercalate(", ");
-                "${predSym}(${ts})"
-            case BodyAtom(predSym, Negative, terms, _) =>
-                let ts = List.map(ToString.toString, terms) |> String.intercalate(", ");
-                "not ${predSym}(${ts})"
-            case GuardAtom(_, terms, _) =>
-                let ts = List.map(ToString.toString, terms) |> String.intercalate(", ");
-                "if f(${ts})"
-        }
+        pub def toString(body: BodyPredicate[v]): String =
+            use Fixpoint.commaSeparate;
+            match body {
+                case BodyAtom(predSym, Positive, terms, _) => "${predSym}(${commaSeparate(terms)})"
+                case BodyAtom(predSym, Negative, terms, _) => "not ${predSym}(${commaSeparate(terms)})"
+                case GuardAtom(_, terms, _) => "if f(${commaSeparate(terms)})"
+            }
     }
 }

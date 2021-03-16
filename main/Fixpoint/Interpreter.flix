@@ -153,7 +153,7 @@ namespace Fixpoint {
                 case None => true
             }
             case BoolExp.Guard(f, terms) =>
-                List.map(evalTerm(env), terms) |> f
+                Array.map(evalTerm(env), terms) |> f
             case BoolExp.Eq(lhs, rhs) =>
                 evalTerm(env, lhs) == evalTerm(env, rhs)
         }
@@ -161,7 +161,7 @@ namespace Fixpoint {
     def evalTerm(env: SearchEnv[v], term: RamTerm[v]): v = match term {
         case RamTerm.Lit(v) => v
         case RamTerm.Attribute(RowVar.Index(i), index) => env[i][index] as & Pure
-        case RamTerm.App(f, args) => List.map(evalTerm(env), args) |> f
+        case RamTerm.App(f, args) => (Array.map(evalTerm(env), args) |> f) as & Pure
         case _ => ???
     }
 

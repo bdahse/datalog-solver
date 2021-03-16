@@ -14,20 +14,14 @@
  * limitations under the License.
  */
 
-namespace Fixpoint/Ram {
-    pub enum RamTerm[v] {
-        case Lit(v)
-        case Attribute(RowVar, Int32)
-        case App(Array[v] -> v, Array[RamTerm[v]])
-    }
-
-    instance ToString[RamTerm[v]] with [v : ToString] {
-        pub def toString(term: RamTerm[v]): String =
-            use Fixpoint.commaSeparate;
-            match term {
-                case Lit(v) => ToString.toString(v)
-                case Attribute(var, index) => "${var}[${index}]"
-                case App(_, args) => "f(${commaSeparate(args)})"                
-            }
-    }
+namespace Fixpoint {
+    /// Helper function to implement ToString
+    pub def commaSeparate[v : ToString](a: Array[v]): String =
+        let toString = () -> {
+            let sb = StringBuilder.new();
+            Array.map(ToString.toString, a) |>
+            StringBuilder.intercalate!(sb, ", ");
+            StringBuilder.toString(sb)
+        };
+        toString() as & Pure
 }
