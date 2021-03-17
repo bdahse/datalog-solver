@@ -23,6 +23,7 @@ namespace Fixpoint/Ram {
     instance ToString[RowVar] {
         pub def toString(var: RowVar): String = match var {
             case Named(name) => name
+            case Index(i) => "${i}$"
         }
     }
 

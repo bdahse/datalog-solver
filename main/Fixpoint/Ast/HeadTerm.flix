@@ -25,7 +25,7 @@ namespace Fixpoint/Ast {
             use Fixpoint.commaSeparate;
             match term {
                 case HeadTerm.Var(varSym, _) => "${varSym}"
-                case HeadTerm.Lit(v, _) => "${v}$"
+                case HeadTerm.Lit(v, _) => "${v}"
                 case HeadTerm.App(_, terms, _) => "f(${commaSeparate(terms)})"
             }
     }
