@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-use Fixpoint/Ast.{Datalog, Constraint, HeadTerm, PredSym, SourceLocation};
+use Fixpoint/Ast.{Datalog, Constraint, HeadTerm, PredSym};
 use Fixpoint/Ast.Datalog.Datalog;
 use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
+use Fixpoint/Ast.PredSym.PredSym;
 
 namespace Fixpoint {
     pub def solve[v : Order : Eq : ToString](d: Datalog[v]): Datalog[v] = match d {
@@ -65,17 +66,18 @@ namespace Fixpoint {
         }, terms) as & Pure
     }
 
-    def tupleToFact(p: PredSym, tuple: Array[v]): Constraint[v] =
-        let terms = Array.map(v -> HeadTerm.Lit(v, SourceLocation.Unknown), tuple) as & Pure;
-        Constraint(HeadAtom(p, terms, SourceLocation.Unknown), [], SourceLocation.Unknown) as & Pure
+    def tupleToFact(p: String, tuple: Array[v]): Constraint[v] =
+        use Fixpoint/Ast.SourceLocation.Unknown;
+        let terms = Array.map(v -> HeadTerm.Lit(v, Unknown), tuple) as & Pure;
+        Constraint(HeadAtom(PredSym(p, Unknown), terms, Unknown), [], Unknown) as & Pure
 
-    def toDatabase[v : Order](facts: Array[Constraint[v]]): Map[PredSym, Set[Array[v]]] =
+    def toDatabase[v : Order](facts: Array[Constraint[v]]): Map[String, Set[Array[v]]] =
         Array.foldRight(c -> match c {
-            case Constraint(HeadAtom(predSym, _, _), _, _) =>
-                Map.insertWith(Set.union, predSym, Set#{factToTuple(c)})
+            case Constraint(HeadAtom(PredSym(pred, _), _, _), _, _) =>
+                Map.insertWith(Set.union, pred, Set#{factToTuple(c)})
         }, Map#{}, facts) as & Pure
 
-    def toAst(db: Map[PredSym, Set[Array[v]]]): Datalog[v] =
+    def toAst(db: Map[String, Set[Array[v]]]): Datalog[v] =
         let facts = Map.foldRightWithKey(k -> v -> {
             let acc = MutList.new();
             Set.foreach(t -> MutList.push!(tupleToFact(k, t), acc), v);

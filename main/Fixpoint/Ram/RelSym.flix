@@ -18,16 +18,16 @@ use Fixpoint/Ast.SourceLocation;
 
 namespace Fixpoint/Ram {
     pub enum RelSym {
-        case Full(String, SourceLocation)
-        case Delta(String, SourceLocation)
-        case New(String, SourceLocation)
+        case Full(String)
+        case Delta(String)
+        case New(String)
     }
 
     instance ToString[RelSym] {
         pub def toString(relSym: RelSym): String = match relSym {
-            case Full(name, _) => name
-            case Delta(name, _) => "Δ${name}"
-            case New(name, _) => "Δ${name}'"
+            case Full(name) => name
+            case Delta(name) => "Δ${name}"
+            case New(name) => "Δ${name}'"
         }
     }
 
@@ -55,9 +55,9 @@ namespace Fixpoint/Ram {
         }
 
         pub def compare(a: RelSym, b: RelSym): Comparison = match (a, b) {
-            case (Full(s1, _), Full(s2, _))   => s1 <=> s2
-            case (Delta(s1, _), Delta(s2, _)) => s1 <=> s2
-            case (New(s1, _), New(s2, _))     => s1 <=> s2
+            case (Full(s1), Full(s2))   => s1 <=> s2
+            case (Delta(s1), Delta(s2)) => s1 <=> s2
+            case (New(s1), New(s2))     => s1 <=> s2
             case (Full(_), _) => GreaterThan
             case (_, Full(_)) => LessThan
             case (Delta(_), New(_)) => GreaterThan

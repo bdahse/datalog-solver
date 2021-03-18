@@ -66,14 +66,14 @@ namespace Fixpoint {
     type alias Database[v] = MutMap[RelSym, MutSet[Tuple[v]]]
     type alias SearchEnv[v] = Array[Tuple[v]]
 
-    pub def interpret[v : Order : Eq](stmt: RamStmt[v]): Map[PredSym, Set[Tuple[v]]] & Impure =
+    pub def interpret[v : Order : Eq](stmt: RamStmt[v]): Map[String, Set[Tuple[v]]] & Impure =
         let db = MutMap.empty();
         evalStmt(db, stmt);
         toImmutable(db)
 
-    def toImmutable(db: Database[v]): Map[PredSym, Set[Tuple[v]]] & Impure =
+    def toImmutable(db: Database[v]): Map[String, Set[Tuple[v]]] & Impure =
         MutMap.foldLeftWithKey(acc -> k -> v -> match k {
-            case RelSym.Full(sym) => Map.insert(PredSym(sym), MutSet.toImmutable(v), acc)
+            case RelSym.Full(relName) => Map.insert(relName, MutSet.toImmutable(v), acc)
             case _ => acc
         }, Map#{}, db)
 
