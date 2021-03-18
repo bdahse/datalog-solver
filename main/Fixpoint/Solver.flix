@@ -20,7 +20,13 @@ use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
 
 namespace Fixpoint {
-    pub def solve[v : Order : Eq : ToString](d: Datalog[v]): Datalog[v] = solveWithStratification(d, ???) // TODO: compute stratification
+    pub def solve[v : Order : Eq : ToString](d: Datalog[v]): Datalog[v] = match d {
+        case Datalog(_, rules) =>
+             // TODO: compute stratification
+            idb(rules) |>
+            Set.foldRight(p -> Map.insert(p, 0), Map#{}) |>
+            solveWithStratification(d)
+    }
 
     pub def solveWithStratification[v : Order : Eq : ToString](d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] =
         compile(d, stf) |>
