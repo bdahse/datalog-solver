@@ -29,12 +29,12 @@ namespace Fixpoint {
     }
 
     pub def solveWithStratification[v : Order : Eq : ToString](d: Datalog[v], stf: Map[PredSym, Int32]): Datalog[v] =
-        compile(d, stf) |>
-        hoistStmt |>
-        queryStmt |>
-        lowerStmt |>
-        interpret |>
-        toAst
+        (compile(d, stf) |>
+         hoistStmt |>
+         queryStmt |>
+         lowerStmt |>
+         interpret |>
+         toAst) as & Pure
 
     pub def union(d1: Datalog[v], d2: Datalog[v]): Datalog[v] = match (d1, d2) {
         case (Datalog(edb1, idb1), Datalog(edb2, idb2)) =>
