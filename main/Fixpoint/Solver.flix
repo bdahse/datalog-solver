@@ -23,7 +23,7 @@ namespace Fixpoint {
     pub def solve[v : Order : Eq : ToString](d: Datalog[v]): Datalog[v] = match d {
         case Datalog(_, rules) =>
              // TODO: compute stratification
-            idb(rules) |>
+            predicatesOf(rules) |>
             Set.foldRight(p -> Map.insert(p, 0), Map#{}) |>
             solveWithStratification(d)
     }
@@ -41,14 +41,14 @@ namespace Fixpoint {
             Datalog(Array.append(edb1, edb2), Array.append(idb1, idb2)) as & Pure
     }
 
-    pub def isSubsetOf[v : Order](d1: Datalog[v], d2: Datalog[v]): Bool =
-        // TODO: This is inefficient if d2 is huge compared to d1.
-        // TODO: Restrict d2 to d1 before making a database of d2.
-        let db1 = toDatabase(d1);
-        let db2 = toDatabase(d2);
-        let lookupD2 = k -> Map.getWithDefault(k, Set#{}, db2);
-        let isSupersetOf = xs -> ys -> Set.isSubsetOf(ys, xs);
-        Map.forall(lookupD2 >> isSupersetOf, db1)
+    pub def isSubsetOf[v : Order](d1: Datalog[v], d2: Datalog[v]): Bool = match (d1, d2) {
+        case (Datalog(edb1, _), Datalog(edb2, _)) =>
+            let db1 = toDatabase(edb1);
+            let db2 = predicatesOf(edb1) |> restrict(edb2) |> toDatabase;
+            let lookupD2 = k -> Map.getWithDefault(k, Set#{}, db2);
+            let isSupersetOf = xs -> ys -> Set.isSubsetOf(ys, xs);
+            Map.forall(lookupD2 >> isSupersetOf, db1)
+    }
 
     pub def project(p: PredSym, d: Datalog[v]): Datalog[v] = match d {
         case Datalog(facts, rules) => Datalog(restrict(facts, Set#{p}), rules)
@@ -69,12 +69,11 @@ namespace Fixpoint {
         let terms = Array.map(v -> HeadTerm.Lit(v, SourceLocation.Unknown), tuple) as & Pure;
         Constraint(HeadAtom(p, terms, SourceLocation.Unknown), [], SourceLocation.Unknown) as & Pure
 
-    def toDatabase[v : Order](d: Datalog[v]): Map[PredSym, Set[Array[v]]] = match d {
-        case Datalog(facts, _) => Array.foldRight(c -> match c {
+    def toDatabase[v : Order](facts: Array[Constraint[v]]): Map[PredSym, Set[Array[v]]] =
+        Array.foldRight(c -> match c {
             case Constraint(HeadAtom(predSym, _, _), _, _) =>
                 Map.insertWith(Set.union, predSym, Set#{factToTuple(c)})
         }, Map#{}, facts) as & Pure
-    }
 
     def toAst(db: Map[PredSym, Set[Array[v]]]): Datalog[v] =
         let facts = () ->

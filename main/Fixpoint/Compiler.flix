@@ -38,7 +38,7 @@ namespace Fixpoint {
     /// by using semi-naive evaluation as a code generator.
     def compileStratum[v : ToString](stratum: Array[Constraint[v]]): RamStmt[v] =
         let fold = f -> xs -> Set.foldRight(x -> Monoid.combine(f(x)), Monoid.empty(), xs);
-        let idb = idb(stratum);
+        let idb = predicatesOf(stratum);
         let eval = Array.fold(Array.map(compileRule, stratum)) as & Pure;
         let mergeDelta = fold(match PredSym(sym) -> {
             RamStmt.Merge(RelSym.Full(sym), RelSym.Delta(sym))
@@ -181,14 +181,9 @@ namespace Fixpoint {
         let memberOf = xs -> x -> Set.memberOf(x, xs);
         Array.filter(headPred >> memberOf(domain), cs) as & Pure
 
-    /// Return the set of IDB predicates of the given constraint system.
-    def idb(cs: Array[Constraint[v]]): Set[PredSym] =
-        Array.foldLeft(acc -> match Constraint(HeadAtom(headPred, _, _), body, _) -> {
-            if (Array.length(body) == 0)
-                acc
-            else
-                Set.insert(headPred, acc)
-        }, Set#{}, cs) as & Pure
+    /// Return the set of predicates of the given constraint system.
+    def predicatesOf(cs: Array[Constraint[v]]): Set[PredSym] =
+        Array.foldRight(match Constraint(HeadAtom(headPred, _, _), _, _) -> Set.insert(headPred), Set#{}, cs) as & Pure
 
     def unwrap(o: Option[a]): a = match o {
         case Some(a) => a
