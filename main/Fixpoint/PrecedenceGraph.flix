@@ -85,6 +85,7 @@ namespace Fixpoint/Ast {
                 cmp
             case (NegativeEdge(_, _), PositiveEdge(_, _)) => LessThan
             case (PositiveEdge(_, _), NegativeEdge(_, _)) => GreaterThan
+            case _ => ?bug
         }
 
     }

@@ -61,6 +61,8 @@ namespace Fixpoint/Ram {
 
         pub def compare(a: RowVar, b: RowVar): Comparison = match (a, b) {
             case (Named(s1), Named(s2)) => s1 <=> s2
+            case (Index(i1), Index(i2)) => i1 <=> i2
+            case _ => ?bug
         }
     }
 }
