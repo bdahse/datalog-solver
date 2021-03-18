@@ -76,9 +76,12 @@ namespace Fixpoint {
         }, Map#{}, facts) as & Pure
 
     def toAst(db: Map[PredSym, Set[Array[v]]]): Datalog[v] =
-        let facts = () ->
-            Map.mapWithKey(k -> Set.foldRight(t -> acc -> tupleToFact(k, t) :: acc, Nil), db) |>
-            Map.map(List.toArray) |>
-            Map.foldLeft(Array.append, []);
-        Datalog(facts(), []) as & Pure
+        let facts = Map.foldRightWithKey(k -> v -> {
+            let acc = MutList.new();
+            Set.foreach(t -> MutList.push!(tupleToFact(k, t), acc), v);
+            MutList.toArray(acc) |>
+            Array.reverse |> // TODO: remove after fixing MutList.toArray
+            Array.append
+        } as & Pure, [], db) as & Pure;
+        Datalog(facts, []) as & Pure
 }
