@@ -23,7 +23,7 @@ use Fixpoint/Ast.Polarity.{Positive, Negative};
 use Fixpoint/Ast.SourceLocation.Unknown;
 use Fixpoint/Ast.PredSym.PredSym;
 use Fixpoint/Ast.VarSym.VarSym;
-use Fixpoint.{solveWithStratification};
+use Fixpoint.{solve, solveWithStratification};
 use ToString.toString;
 
 @test
@@ -57,8 +57,7 @@ pub def test01(): Bool & Impure =
                                     [BodyTerm.Var(VarSym("person", Unknown), Unknown)],
                                     Unknown)],
                             Unknown);
-    Map#{PredSym("Happy", Unknown) -> 0} |>
-    solveWithStratification(Datalog([fact1, fact2, fact3, fact4], [rule1])) |>
+    solve(Datalog([fact1, fact2, fact3, fact4], [rule1])) |>
     toString |>
     String.lines |>
     toString == "Age(34). :: Famous(Joakim). :: Happy(Joakim). :: Rich(Joakim). :: Rich(Magnus). :: Nil"
@@ -228,8 +227,7 @@ pub def test03(): Bool & Impure =
                                     [BodyTerm.Var(VarSym("y", Unknown), Unknown)],
                                     Unknown)],
                             Unknown);
-    Map#{PredSym("Sum", Unknown) -> 0} |>
-    solveWithStratification(Datalog([fact1, fact2, fact3, fact4], [rule1, rule2])) |>
+    solve(Datalog([fact1, fact2, fact3, fact4], [rule1, rule2])) |>
     toString |>
     String.lines |>
     toString == "Number(2). :: Number(3). :: Number(5). :: Number(7). :: Sum(2 + 0). :: Sum(2 + 2). :: Sum(2 + 3). :: Sum(2 + 5). :: Sum(2 + 7). :: Sum(3 + 0). :: Sum(3 + 2). :: Sum(3 + 3). :: Sum(3 + 5). :: Sum(3 + 7). :: Sum(5 + 0). :: Sum(5 + 2). :: Sum(5 + 3). :: Sum(5 + 5). :: Sum(5 + 7). :: Sum(7 + 0). :: Sum(7 + 2). :: Sum(7 + 3). :: Sum(7 + 5). :: Sum(7 + 7). :: Nil"
@@ -299,8 +297,7 @@ pub def test04(): Bool & Impure =
                                     [BodyTerm.Var(VarSym("speedLimit", Unknown), Unknown)],
                                     Unknown)],
                             Unknown);
-    Map#{PredSym("Path", Unknown) -> 0} |>
-    solveWithStratification(Datalog([fact1, fact2, fact3, fact4], [rule1, rule2])) |>
+    solve(Datalog([fact1, fact2, fact3, fact4], [rule1, rule2])) |>
     toString |>
     String.lines |>
     toString == "Edge(A, 080, B). :: Edge(B, 070, C). :: Edge(C, 110, D). :: Edge(D, 050, B). :: Path(A, B). :: Path(A, C). :: Path(A, D). :: Path(B, C). :: Path(B, D). :: Path(C, D). :: Nil"
