@@ -124,12 +124,6 @@ namespace Fixpoint {
                 RamTerm.App(f, ramTerms)
         }
 
-    def compileBodyTerm(env: Map[VarSym, RamTerm[v]], term: BodyTerm[v]): RamTerm[v] =
-        match term {
-            case BodyTerm.Var(var, _) => unwrap(Map.get(var, env))
-            case BodyTerm.Lit(v, _) => RamTerm.Lit(v)
-        }
-
     /// Augment body atoms with row variables and indices.
     def augmentBody(body: Array[BodyPredicate[v]]): Array[(BodyPredicate[v], RowVar, Int32)] =
         Array.mapWithIndex(atom -> i -> match atom {
@@ -154,6 +148,7 @@ namespace Fixpoint {
                 Array.mapWithIndex(term -> j -> match term {
                     case BodyTerm.Var(var, _) => Map.singleton(var, RamTerm.Attribute(rowVar, j))
                     case BodyTerm.Lit(_, _) => Map#{}
+                    case BodyTerm.Wild(_) => Map#{}
                 }, terms)|>
                 Array.foldLeft(Map.union, acc)
         }, Map#{}, body) as & Pure
@@ -161,21 +156,27 @@ namespace Fixpoint {
     /// Equates every term in a positive body atom with an attribute
     /// and declares that terms in negative body atoms are not in the corresponding relations.
     def joinTerms(env: Map[VarSym, RamTerm[v]], body: Array[(BodyPredicate[v], RowVar, Int32)]): List[BoolExp[v]] =
-        Array.foldRight(match (atom, rowVar, _) -> acc -> match atom {
-            case BodyAtom(_, Polarity.Positive, terms, _) =>
-                let cons = x -> xs -> x :: xs;
-                Array.mapWithIndex(term -> j -> {
-                    let ramTerm = compileBodyTerm(env, term);
-                    BoolExp.Eq(RamTerm.Attribute(rowVar, j), ramTerm)
-                }, terms) |>
-                Array.foldRight(cons, acc)
-            case BodyAtom(PredSym(pred, _), Polarity.Negative, terms, _) =>
-                let ramTerms = Array.map(compileBodyTerm(env), terms);
-                BoolExp.NotMemberOf(ramTerms, RelSym.Full(pred)) :: acc
-            case GuardAtom(f, terms, _) =>
-                let ramTerms = Array.map(compileBodyTerm(env), terms);
-                BoolExp.Guard(f, ramTerms) :: acc
-        }, Nil, body) as & Pure
+        Array.foldRight(match (atom, rowVar, _) -> acc ->
+            let compileBodyTerm = term -> j -> match term {
+                case BodyTerm.Var(var, _) => unwrap(Map.get(var, env))
+                case BodyTerm.Lit(v, _) => RamTerm.Lit(v)
+                case BodyTerm.Wild(_) => RamTerm.Attribute(rowVar, j)
+            };
+            match atom {
+                case BodyAtom(_, Polarity.Positive, terms, _) =>
+                    let cons = x -> xs -> x :: xs;
+                    Array.mapWithIndex(term -> j -> {
+                        let ramTerm = compileBodyTerm(term, j);
+                        BoolExp.Eq(RamTerm.Attribute(rowVar, j), ramTerm)
+                    }, terms) |>
+                    Array.foldRight(cons, acc)
+                case BodyAtom(PredSym(pred, _), Polarity.Negative, terms, _) =>
+                    let ramTerms = Array.mapWithIndex(compileBodyTerm, terms);
+                    BoolExp.NotMemberOf(ramTerms, RelSym.Full(pred)) :: acc
+                case GuardAtom(f, terms, _) =>
+                    let ramTerms = Array.mapWithIndex(compileBodyTerm, terms);
+                    BoolExp.Guard(f, ramTerms) :: acc
+            }, Nil, body) as & Pure
 
     /// Restrict a constraint system to those constraints whose head predicate belongs to the given domain.
     def restrict(cs: Array[Constraint[v]], domain: Set[PredSym]): Array[Constraint[v]] =

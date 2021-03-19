@@ -96,7 +96,7 @@ pub def test02() : Bool & Impure =
                             [BodyAtom(PredSym("Edge", Unknown),
                                     Positive,
                                     [BodyTerm.Var(VarSym("x", Unknown), Unknown),
-                                     BodyTerm.Var(VarSym("_", Unknown), Unknown)],
+                                     BodyTerm.Wild(Unknown)],
                                     Unknown)],
                             Unknown);
     let rule2 = Constraint(HeadAtom(PredSym("Vertex", Unknown),
@@ -104,7 +104,7 @@ pub def test02() : Bool & Impure =
                                     Unknown),
                             [BodyAtom(PredSym("Edge", Unknown),
                                     Positive,
-                                    [BodyTerm.Var(VarSym("_", Unknown), Unknown),
+                                    [BodyTerm.Wild(Unknown),
                                      BodyTerm.Var(VarSym("y", Unknown), Unknown)],
                                     Unknown)],
                             Unknown);
