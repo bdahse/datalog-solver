@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-use Fixpoint/Ast.{ConstraintSystem, Constraint, HeadTerm, BodyTerm};
-use Fixpoint/Ast.ConstraintSystem.ConstraintSystem;
+use Fixpoint/Ast.{Datalog, Constraint, HeadTerm, BodyTerm};
+use Fixpoint/Ast.Datalog.Datalog;
 use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
 use Fixpoint/Ast.BodyPredicate.{BodyAtom, GuardAtom};
@@ -23,7 +23,7 @@ use Fixpoint/Ast.Polarity.{Positive, Negative};
 use Fixpoint/Ast.SourceLocation.Unknown;
 use Fixpoint/Ast.PredSym.PredSym;
 use Fixpoint/Ast.VarSym.VarSym;
-use Fixpoint.{compile, interpret, hoistStmt, queryStmt, lowerStmt};
+use Fixpoint.{solve, solveWithStratification};
 use ToString.toString;
 
 @test
@@ -57,13 +57,10 @@ pub def test01(): Bool & Impure =
                                     [BodyTerm.Var(VarSym("person", Unknown), Unknown)],
                                     Unknown)],
                             Unknown);
-    Map#{PredSym("Happy", Unknown) -> 0} |>
-    compile(ConstraintSystem([fact1, fact2, fact3, fact4], [rule1])) |>
-    hoistStmt |>
-    queryStmt |>
-    lowerStmt |>
-    interpret |>
-    toString == "Model#{Age#{34}, Famous#{Joakim}, Happy#{Joakim}, Rich#{Magnus, Joakim}}"
+    solve(Datalog([fact1, fact2, fact3, fact4], [rule1])) |>
+    toString |>
+    String.lines |>
+    toString == "Age(34). :: Famous(Joakim). :: Happy(Joakim). :: Rich(Joakim). :: Rich(Magnus). :: Nil"
 
 @test
 pub def test02() : Bool & Impure =
@@ -175,12 +172,10 @@ pub def test02() : Bool & Impure =
         PredSym("Unconnected", Unknown) -> 1,
         PredSym("AntiSymmetric", Unknown) -> 1
     } |>
-    compile(ConstraintSystem([fact1, fact2, fact3, fact4], [rule1, rule2, rule3, rule4, rule5, rule6])) |>
-    hoistStmt |>
-    queryStmt |>
-    lowerStmt |>
-    interpret |>
-    toString == "Model#{AntiSymmetric#{(A, D), (A, C), (A, B)}, Edge#{(D, B), (C, D), (B, C), (A, B)}, Path#{(D, D), (D, C), (D, B), (C, D), (C, C), (C, B), (B, D), (B, C), (B, B), (A, D), (A, C), (A, B)}, Unconnected#{(D, A), (C, A), (B, A), (A, A)}, Vertex#{D, C, B, A}}"
+    solveWithStratification(Datalog([fact1, fact2, fact3, fact4], [rule1, rule2, rule3, rule4, rule5, rule6])) |>
+    toString |>
+    String.lines |>
+    toString == "AntiSymmetric(A, B). :: AntiSymmetric(A, C). :: AntiSymmetric(A, D). :: Edge(A, B). :: Edge(B, C). :: Edge(C, D). :: Edge(D, B). :: Path(A, B). :: Path(A, C). :: Path(A, D). :: Path(B, B). :: Path(B, C). :: Path(B, D). :: Path(C, B). :: Path(C, C). :: Path(C, D). :: Path(D, B). :: Path(D, C). :: Path(D, D). :: Unconnected(A, A). :: Unconnected(B, A). :: Unconnected(C, A). :: Unconnected(D, A). :: Vertex(A). :: Vertex(B). :: Vertex(C). :: Vertex(D). :: Nil"
 
 @test
 pub def test03(): Bool & Impure =
@@ -232,13 +227,10 @@ pub def test03(): Bool & Impure =
                                     [BodyTerm.Var(VarSym("y", Unknown), Unknown)],
                                     Unknown)],
                             Unknown);
-    Map#{PredSym("Sum", Unknown) -> 0} |>
-    compile(ConstraintSystem([fact1, fact2, fact3, fact4], [rule1, rule2])) |>
-    hoistStmt |>
-    queryStmt |>
-    lowerStmt |>
-    interpret |>
-    toString == "Model#{Number#{7, 5, 3, 2}, Sum#{7 + 7, 7 + 5, 7 + 3, 7 + 2, 7 + 0, 5 + 7, 5 + 5, 5 + 3, 5 + 2, 5 + 0, 3 + 7, 3 + 5, 3 + 3, 3 + 2, 3 + 0, 2 + 7, 2 + 5, 2 + 3, 2 + 2, 2 + 0}}"
+    solve(Datalog([fact1, fact2, fact3, fact4], [rule1, rule2])) |>
+    toString |>
+    String.lines |>
+    toString == "Number(2). :: Number(3). :: Number(5). :: Number(7). :: Sum(2 + 0). :: Sum(2 + 2). :: Sum(2 + 3). :: Sum(2 + 5). :: Sum(2 + 7). :: Sum(3 + 0). :: Sum(3 + 2). :: Sum(3 + 3). :: Sum(3 + 5). :: Sum(3 + 7). :: Sum(5 + 0). :: Sum(5 + 2). :: Sum(5 + 3). :: Sum(5 + 5). :: Sum(5 + 7). :: Sum(7 + 0). :: Sum(7 + 2). :: Sum(7 + 3). :: Sum(7 + 5). :: Sum(7 + 7). :: Nil"
 
 @test
 pub def test04(): Bool & Impure =
@@ -305,10 +297,7 @@ pub def test04(): Bool & Impure =
                                     [BodyTerm.Var(VarSym("speedLimit", Unknown), Unknown)],
                                     Unknown)],
                             Unknown);
-    Map#{PredSym("Path", Unknown) -> 0} |>
-    compile(ConstraintSystem([fact1, fact2, fact3, fact4], [rule1, rule2])) |>
-    hoistStmt |>
-    queryStmt |>
-    lowerStmt |>
-    interpret |>
-    toString == "Model#{Edge#{(D, 050, B), (C, 110, D), (B, 070, C), (A, 080, B)}, Path#{(C, D), (B, D), (B, C), (A, D), (A, C), (A, B)}}"
+    solve(Datalog([fact1, fact2, fact3, fact4], [rule1, rule2])) |>
+    toString |>
+    String.lines |>
+    toString == "Edge(A, 080, B). :: Edge(B, 070, C). :: Edge(C, 110, D). :: Edge(D, 050, B). :: Path(A, B). :: Path(A, C). :: Path(A, D). :: Path(B, C). :: Path(B, D). :: Path(C, D). :: Nil"

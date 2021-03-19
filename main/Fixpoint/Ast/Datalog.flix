@@ -15,13 +15,13 @@
  */
 
 namespace Fixpoint/Ast {
-    pub enum ConstraintSystem[v] {
-        case ConstraintSystem(Array[Constraint[v]], Array[Constraint[v]])
+    pub enum Datalog[v] {
+        case Datalog(Array[Constraint[v]], Array[Constraint[v]])
     }
 
-    instance ToString[ConstraintSystem[v]] with [v : ToString] {
-        pub def toString(cs: ConstraintSystem[v]): String =
-            let toString = match ConstraintSystem(facts, rules) -> {
+    instance ToString[Datalog[v]] with [v : ToString] {
+        pub def toString(cs: Datalog[v]): String =
+            let toString = match Datalog(facts, rules) -> {
                 let sb = StringBuilder.new();
                 Array.append(facts, rules) |>
                 Array.map(ToString.toString) |>

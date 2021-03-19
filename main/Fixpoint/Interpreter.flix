@@ -15,6 +15,8 @@
  */
 
 use Fixpoint/Ram.{RamStmt, RelOp, RelSym, RamTerm, BoolExp, RowVar};
+use Fixpoint/Ast.PredSym;
+use Fixpoint/Ast.PredSym.PredSym;
 use Fixpoint.Tuple;
 
 instance Order[Tuple[v]] with [v : Order] {
@@ -63,19 +65,17 @@ namespace Fixpoint {
     pub type alias Tuple[v] = Array[v]
     type alias Database[v] = MutMap[RelSym, MutSet[Tuple[v]]]
     type alias SearchEnv[v] = Array[Tuple[v]]
-    pub opaque type Model[v] = Map[String, Set[Tuple[v]]]
 
-    pub def interpret[v : Order : Eq](stmt: RamStmt[v]): Model[v] & Impure =
+    pub def interpret[v : Order : Eq](stmt: RamStmt[v]): Map[String, Set[Tuple[v]]] & Impure =
         let db = MutMap.empty();
         evalStmt(db, stmt);
-        toModel(db)
+        toImmutable(db)
 
-    def toModel(db: Database[v]): Model[v] & Impure =
+    def toImmutable(db: Database[v]): Map[String, Set[Tuple[v]]] & Impure =
         MutMap.foldLeftWithKey(acc -> k -> v -> match k {
             case RelSym.Full(relName) => Map.insert(relName, MutSet.toImmutable(v), acc)
             case _ => acc
-        }, Map#{}, db) |>
-        Model
+        }, Map#{}, db)
 
     def evalStmt[v : Order : Eq](db: Database[v], stmt: RamStmt[v]): Unit & Impure = match stmt {
         case RamStmt.Insert(relOp) => evalOp(db, allocEnv(0, relOp), relOp)
@@ -163,28 +163,5 @@ namespace Fixpoint {
         case RamTerm.Attribute(RowVar.Index(i), index) => env[i][index] as & Pure
         case RamTerm.App(f, args) => (Array.map(evalTerm(env), args) |> f) as & Pure
         case _ => ???
-    }
-
-    instance ToString[Model[v]] with [v : ToString] {
-        pub def toString(model: Model[v]): String = match model {
-            case Model(db) =>
-                let relations =
-                    Map.mapWithKey(k -> v -> {
-                        let relation =
-                            Set.map(tuple ->
-                            match List.map(ToString.toString, Array.toList(tuple) as & Pure) {
-                                case x :: Nil => x
-                                case ts =>
-                                    let xs = String.intercalate(", ", ts);
-                                    "(${xs})"
-                            }, v) |>
-                            Set.toList |>
-                            String.intercalate(", ");
-                        "${k}#{${relation}}"
-                    }, db) |>
-                    Map.valuesOf |>
-                    String.intercalate(", ");
-                "Model#{${relations}}"
-        }
     }
 }

@@ -15,16 +15,16 @@
  */
 
 use Fixpoint/Ram.{RamStmt, RelOp, RelSym, RamTerm, BoolExp, RowVar};
-use Fixpoint/Ast.{ConstraintSystem, Constraint, BodyPredicate, BodyTerm, HeadTerm, Polarity, PredSym, VarSym};
-use Fixpoint/Ast.ConstraintSystem.ConstraintSystem;
+use Fixpoint/Ast.{Datalog, Constraint, BodyPredicate, BodyTerm, HeadTerm, Polarity, PredSym, VarSym};
+use Fixpoint/Ast.Datalog.Datalog;
 use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
 use Fixpoint/Ast.BodyPredicate.{BodyAtom, GuardAtom};
 use Fixpoint/Ast.PredSym.PredSym;
 
 namespace Fixpoint {
-    pub def compile[v : ToString](cs: ConstraintSystem[v], strat: Map[PredSym, Int32]): RamStmt[v] = match cs {
-        case ConstraintSystem(facts, rules) =>
+    pub def compile[v : ToString](cs: Datalog[v], strat: Map[PredSym, Int32]): RamStmt[v] = match cs {
+        case Datalog(facts, rules) =>
             let evalFacts = Array.fold(Array.map(compileRule, facts)) as & Pure;
             let evalStrata =
                 Map.invert(strat) |>
@@ -37,10 +37,8 @@ namespace Fixpoint {
     /// Compile all rules to be computed in a stratum to RAM
     /// by using semi-naive evaluation as a code generator.
     def compileStratum[v : ToString](stratum: Array[Constraint[v]]): RamStmt[v] =
-        let fold = f -> xs -> Set.foldRight(x -> acc -> {
-            Monoid.combine(f(x), acc)
-        }, Monoid.empty(), xs);
-        let idb = idb(stratum);
+        let fold = f -> xs -> Set.foldRight(x -> Monoid.combine(f(x)), Monoid.empty(), xs);
+        let idb = predicatesOf(stratum);
         let eval = Array.fold(Array.map(compileRule, stratum)) as & Pure;
         let mergeDelta = fold(match PredSym(relName, _) -> {
             RamStmt.Merge(RelSym.Full(relName), RelSym.Delta(relName))
@@ -171,9 +169,9 @@ namespace Fixpoint {
                     BoolExp.Eq(RamTerm.Attribute(rowVar, j), ramTerm)
                 }, terms) |>
                 Array.foldRight(cons, acc)
-            case BodyAtom(PredSym(relName, _), Polarity.Negative, terms, _) =>
+            case BodyAtom(PredSym(pred, _), Polarity.Negative, terms, _) =>
                 let ramTerms = Array.map(compileBodyTerm(env), terms);
-                BoolExp.NotMemberOf(ramTerms, RelSym.Full(relName)) :: acc
+                BoolExp.NotMemberOf(ramTerms, RelSym.Full(pred)) :: acc
             case GuardAtom(f, terms, _) =>
                 let ramTerms = Array.map(compileBodyTerm(env), terms);
                 BoolExp.Guard(f, ramTerms) :: acc
@@ -185,14 +183,9 @@ namespace Fixpoint {
         let memberOf = xs -> x -> Set.memberOf(x, xs);
         Array.filter(headPred >> memberOf(domain), cs) as & Pure
 
-    /// Return the set of IDB predicates of the given constraint system.
-    def idb(cs: Array[Constraint[v]]): Set[PredSym] =
-        Array.foldLeft(acc -> match Constraint(HeadAtom(headPred, _, _), body, _) -> {
-            if (Array.length(body) == 0)
-                acc
-            else
-                Set.insert(headPred, acc)
-        }, Set#{}, cs) as & Pure
+    /// Return the set of predicates of the given constraint system.
+    def predicatesOf(cs: Array[Constraint[v]]): Set[PredSym] =
+        Array.foldRight(match Constraint(HeadAtom(headPred, _, _), _, _) -> Set.insert(headPred), Set#{}, cs) as & Pure
 
     def unwrap(o: Option[a]): a = match o {
         case Some(a) => a

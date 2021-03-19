@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+use Fixpoint/Ast.SourceLocation;
+
 namespace Fixpoint/Ram {
     pub enum RelSym {
         case Full(String)

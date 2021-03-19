@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-use Fixpoint.{compile, interpret, hoistStmt, queryStmt, lowerStmt};
-use Fixpoint.Model.Model;
+use Fixpoint.{solveWithStratification};
 use Fixpoint/Ast.{HeadTerm, BodyTerm, Polarity};
 use Fixpoint/Ast.Constraint.Constraint;
-use Fixpoint/Ast.ConstraintSystem.ConstraintSystem;
+use Fixpoint/Ast.Datalog.Datalog;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
 use Fixpoint/Ast.BodyPredicate.BodyAtom;
 use Fixpoint/Ast.PredSym.PredSym;
@@ -73,15 +72,8 @@ pub def benchmark(): Unit & Impure =
                                      BodyTerm.Var(VarSym("z", Unknown), Unknown)],
                                     Unknown)],
                             Unknown);
-    let Model(db) =
-        Map#{PredSym("Path", Unknown) -> 0} |>
-        compile(ConstraintSystem(facts, [rule1, rule2])) |>
-        hoistStmt |>
-        queryStmt |>
-        lowerStmt |>
-        interpret;
-    let path = Map.getWithDefault("Path", Set#{}, db);
-    println("Deduced ${Set.size(path)} facts.")
+    let db = Map#{PredSym("Path", Unknown) -> 0} |> solveWithStratification(Datalog(facts, [rule1, rule2]));
+    println(db)
 
 def main(_args: Array[String]): Int32 & Impure =
     benchmark();

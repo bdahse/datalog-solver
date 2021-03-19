@@ -21,8 +21,8 @@ namespace Fixpoint/Ast {
         case NegativeEdge(BodyPredicate[v], HeadPredicate[v])
     }
 
-    pub def precedence(cs: ConstraintSystem[v]): PrecedenceGraph[v] = match cs {
-        case ConstraintSystem(_, rules) =>
+    pub def precedence(cs: Datalog[v]): PrecedenceGraph[v] = match cs {
+        case Datalog(_, rules) =>
             Array.fold(Array.map(precedenceHelper, rules)) as & Pure
     }
 
@@ -85,6 +85,7 @@ namespace Fixpoint/Ast {
                 cmp
             case (NegativeEdge(_, _), PositiveEdge(_, _)) => LessThan
             case (PositiveEdge(_, _), NegativeEdge(_, _)) => GreaterThan
+            case _ => ?bug
         }
 
     }
