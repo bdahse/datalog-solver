@@ -76,7 +76,7 @@ namespace Fixpoint {
                         else
                             (false, RelOp.Search(rowVar, RelSym.Full(pred), Nil, acc))
                     case _ => (isLast, acc)
-                }, (true, projection), positiveAtoms(augBody)) as & Pure |>
+                }, (true, projection), augBody) as & Pure |>
                 snd |>
                 RamStmt.Insert;
             let comment = RamStmt.Comment(ToString.toString(rule));
@@ -90,7 +90,6 @@ namespace Fixpoint {
             let join = joinTerms(env, augBody);
             let ramTerms = Array.map(compileHeadTerm(env), headTerms) as & Pure;
             let projection = RelOp.Project(ramTerms, RelSym.New(headPred));
-            let positiveAtoms = positiveAtoms(augBody);
             /// Compile rule into an incremental join loop where delta designates the focused atom.
             let compile = delta ->
                 Array.foldRight(match (atom, rowVar) -> match (isLast, acc) -> match atom {
@@ -107,9 +106,13 @@ namespace Fixpoint {
                         };
                         (false, RelOp.Search(rowVar, relSym, where, acc))
                     case _ => (isLast, acc)
-                }, (true, projection), positiveAtoms) as & Pure |>
+                }, (true, projection), augBody) as & Pure |>
                 snd |>
                 RamStmt.Insert;
+            let positiveAtoms = Array.filter(match (atom, _) -> match atom {
+                case BodyAtom(_, Polarity.Positive, _, _) => true
+                case _ => false
+            }, augBody) as & Pure;
             let deltas = Array.fold(Array.map(match (_, rowVar) -> compile(rowVar), positiveAtoms)) as & Pure;
             let comment = RamStmt.Comment(ToString.toString(rule));
             List.fold(comment :: deltas :: Nil)
@@ -129,13 +132,6 @@ namespace Fixpoint {
         Array.mapWithIndex(atom -> i -> match atom {
             case GuardAtom(_) => (atom, RowVar.Named("IfYouSeeThisYouFoundABug"))
             case BodyAtom(predSym, _, _, _) => (atom, RowVar.Named("${predSym}$${i}"))
-        }, body) as & Pure
-
-    /// Return all positive atoms present in body.
-    def positiveAtoms(body: Array[(BodyPredicate[v], RowVar)]): Array[(BodyPredicate[v], RowVar)] =
-        Array.filter(match (atom, _) -> match atom {
-            case BodyAtom(_, Polarity.Positive, _, _) => true
-            case _ => false
         }, body) as & Pure
 
     /// Unifies each variable that occurs in a rule body with an attribute
