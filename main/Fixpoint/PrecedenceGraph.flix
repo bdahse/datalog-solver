@@ -33,7 +33,7 @@ namespace Fixpoint/Ast {
     def mkDepEdge(dst: HeadPredicate[v], src: BodyPredicate[v]): PrecedenceGraph[v] = match src {
         case BodyAtom(_, Positive, _, _) => PrecedenceGraph(Set#{PositiveEdge(src, dst)})
         case BodyAtom(_, Negative, _, _) => PrecedenceGraph(Set#{NegativeEdge(src, dst)})
-        case GuardAtom(_) => PrecedenceGraph(Set#{})
+        case _ => PrecedenceGraph(Set#{})
     }
 
     instance Monoid[PrecedenceGraph[v]] {

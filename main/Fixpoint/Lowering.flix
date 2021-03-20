@@ -52,10 +52,33 @@ namespace Fixpoint {
             case BoolExp.Empty(_) => exp
             case BoolExp.NotMemberOf(terms, relSym) =>
                  BoolExp.NotMemberOf(Array.map(lowerTerm(rowVars), terms), relSym) as & Pure
-            case BoolExp.Guard(f, terms) =>
-                 BoolExp.Guard(f, Array.map(lowerTerm(rowVars), terms)) as & Pure
             case BoolExp.Eq(lhs, rhs) =>
                  BoolExp.Eq(lowerTerm(rowVars, lhs), lowerTerm(rowVars, rhs))
+            case BoolExp.Guard1(f, v) =>
+                let t = lowerTerm(rowVars, v);
+                BoolExp.Guard1(f, t)
+            case BoolExp.Guard2(f, v1, v2) =>
+                let t1 = lowerTerm(rowVars, v1);
+                let t2 = lowerTerm(rowVars, v2);
+                BoolExp.Guard2(f, t1, t2)
+            case BoolExp.Guard3(f, v1, v2, v3) =>
+                let t1 = lowerTerm(rowVars, v1);
+                let t2 = lowerTerm(rowVars, v2);
+                let t3 = lowerTerm(rowVars, v3);
+                BoolExp.Guard3(f, t1, t2, t3)
+            case BoolExp.Guard4(f, v1, v2, v3, v4) =>
+                let t1 = lowerTerm(rowVars, v1);
+                let t2 = lowerTerm(rowVars, v2);
+                let t3 = lowerTerm(rowVars, v3);
+                let t4 = lowerTerm(rowVars, v4);
+                BoolExp.Guard4(f, t1, t2, t3, t4)
+            case BoolExp.Guard5(f, v1, v2, v3, v4, v5) =>
+                let t1 = lowerTerm(rowVars, v1);
+                let t2 = lowerTerm(rowVars, v2);
+                let t3 = lowerTerm(rowVars, v3);
+                let t4 = lowerTerm(rowVars, v4);
+                let t5 = lowerTerm(rowVars, v5);
+                BoolExp.Guard5(f, t1, t2, t3, t4, t5)
         }
 
     def lowerTerm(rowVars: Map[RowVar, RowVar], term: RamTerm[v]): RamTerm[v] = match term {

@@ -108,8 +108,26 @@ namespace Fixpoint {
     def isExpGround(freeVars: Set[RowVar], exp: BoolExp[v]): Bool = match exp {
         case BoolExp.Empty(_) => true
         case BoolExp.NotMemberOf(terms, _) => Array.forall(isTermGround(freeVars), terms) as & Pure
-        case BoolExp.Guard(_, terms) => Array.forall(isTermGround(freeVars), terms) as & Pure
         case BoolExp.Eq(lhs, rhs) => isTermGround(freeVars, lhs) and isTermGround(freeVars, rhs)
+        case BoolExp.Guard1(_, t) => isTermGround(freeVars, t)
+        case BoolExp.Guard2(_, t1, t2) =>
+            isTermGround(freeVars, t1) and
+            isTermGround(freeVars, t2)
+        case BoolExp.Guard3(_, t1, t2, t3) =>
+            isTermGround(freeVars, t1) and
+            isTermGround(freeVars, t2) and
+            isTermGround(freeVars, t3)
+        case BoolExp.Guard4(_, t1, t2, t3, t4) =>
+            isTermGround(freeVars, t1) and
+            isTermGround(freeVars, t2) and
+            isTermGround(freeVars, t3) and
+            isTermGround(freeVars, t4)
+        case BoolExp.Guard5(_, t1, t2, t3, t4, t5) =>
+            isTermGround(freeVars, t1) and
+            isTermGround(freeVars, t2) and
+            isTermGround(freeVars, t3) and
+            isTermGround(freeVars, t4) and
+            isTermGround(freeVars, t5)
     }
 
     /// A term is ground if it is a literal or a free variable.

@@ -18,7 +18,7 @@ use Fixpoint/Ast.{Datalog, Constraint, HeadTerm, BodyTerm};
 use Fixpoint/Ast.Datalog.Datalog;
 use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
-use Fixpoint/Ast.BodyPredicate.{BodyAtom, GuardAtom};
+use Fixpoint/Ast.BodyPredicate.{BodyAtom, Guard1};
 use Fixpoint/Ast.Polarity.{Positive, Negative};
 use Fixpoint/Ast.SourceLocation.Unknown;
 use Fixpoint/Ast.PredSym.PredSym;
@@ -232,10 +232,7 @@ pub def test04(): Bool & Impure =
     /// Edge(D, 50. B).
     /// Path(x, y) :- Edge(x, speedLimit, y), if speedLimit >= 70.
     /// Path(x, z) :- Path(x, y), Edge(y, speedLimit, z), if speedLimit >= 70.
-    let f = args -> match args {
-        case [x] => x >= "070"
-        case _ => false
-    };
+    let f = x -> x >= "070";
     let fact1 = Constraint(HeadAtom(PredSym("Edge", Unknown),
                                     [HeadTerm.Lit("A", Unknown),
                                      HeadTerm.Lit("080", Unknown),
@@ -266,9 +263,7 @@ pub def test04(): Bool & Impure =
                                      BodyTerm.Var(VarSym("speedLimit", Unknown), Unknown),
                                      BodyTerm.Var(VarSym("y", Unknown), Unknown)],
                                     Unknown),
-                            GuardAtom(f,
-                                    [BodyTerm.Var(VarSym("speedLimit", Unknown), Unknown)],
-                                    Unknown)],
+                            Guard1(f, VarSym("speedLimit", Unknown), Unknown)],
                             Unknown);
     let rule2 = Constraint(HeadAtom(PredSym("Path", Unknown),
                                     [HeadTerm.Var(VarSym("x", Unknown), Unknown),
@@ -285,9 +280,7 @@ pub def test04(): Bool & Impure =
                                      BodyTerm.Var(VarSym("speedLimit", Unknown), Unknown),
                                      BodyTerm.Var(VarSym("z", Unknown), Unknown)],
                                     Unknown),
-                            GuardAtom(f,
-                                    [BodyTerm.Var(VarSym("speedLimit", Unknown), Unknown)],
-                                    Unknown)],
+                            Guard1(f, VarSym("speedLimit", Unknown), Unknown)],
                             Unknown);
     solve(Datalog([fact1, fact2, fact3, fact4], [rule1, rule2])) |>
     toString |>

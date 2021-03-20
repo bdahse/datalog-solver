@@ -152,10 +152,33 @@ namespace Fixpoint {
                     not MutSet.memberOf(tuple, table)
                 case None => true
             }
-            case BoolExp.Guard(f, terms) =>
-                Array.map(evalTerm(env), terms) |> f
             case BoolExp.Eq(lhs, rhs) =>
                 evalTerm(env, lhs) == evalTerm(env, rhs)
+            case BoolExp.Guard1(f, t) =>
+                let v = evalTerm(env, t);
+                f(v)
+            case BoolExp.Guard2(f, t1, t2) =>
+                let v1 = evalTerm(env, t1);
+                let v2 = evalTerm(env, t2);
+                f(v1)(v2)
+            case BoolExp.Guard3(f, t1, t2, t3) =>
+                let v1 = evalTerm(env, t1);
+                let v2 = evalTerm(env, t2);
+                let v3 = evalTerm(env, t3);
+                f(v1)(v2)(v3)
+            case BoolExp.Guard4(f, t1, t2, t3, t4) =>
+                let v1 = evalTerm(env, t1);
+                let v2 = evalTerm(env, t2);
+                let v3 = evalTerm(env, t3);
+                let v4 = evalTerm(env, t4);
+                f(v1)(v2)(v3)(v4)
+            case BoolExp.Guard5(f, t1, t2, t3, t4, t5) =>
+                let v1 = evalTerm(env, t1);
+                let v2 = evalTerm(env, t2);
+                let v3 = evalTerm(env, t3);
+                let v4 = evalTerm(env, t4);
+                let v5 = evalTerm(env, t5);
+                f(v1)(v2)(v3)(v4)(v5)
         }
 
     def evalTerm(env: SearchEnv[v], term: RamTerm[v]): v = match term {
