@@ -18,16 +18,22 @@ namespace Fixpoint/Ram {
     pub enum RamTerm[v] {
         case Lit(v)
         case Attribute(RowVar, Int32)
-        case App(Array[v] -> v, Array[RamTerm[v]])
+        case App1(v -> v, RamTerm[v])
+        case App2(v -> v -> v, RamTerm[v], RamTerm[v])
+        case App3(v -> v -> v -> v, RamTerm[v], RamTerm[v], RamTerm[v])
+        case App4(v -> v -> v -> v -> v, RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v])
+        case App5(v -> v -> v -> v -> v -> v, RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v], RamTerm[v])
     }
 
     instance ToString[RamTerm[v]] with [v : ToString] {
-        pub def toString(term: RamTerm[v]): String =
-            use Fixpoint.commaSeparate;
-            match term {
-                case Lit(v) => ToString.toString(v)
-                case Attribute(var, index) => "${var}[${index}]"
-                case App(_, args) => "f(${commaSeparate(args)})"                
-            }
+        pub def toString(term: RamTerm[v]): String = match term {
+            case Lit(v) => ToString.toString(v)
+            case Attribute(var, index) => "${var}[${index}]"
+            case App1(_, v) => "f(${v})"
+            case App2(_, v1, v2) => "f(${v1}, ${v2})"
+            case App3(_, v1, v2, v3) => "f(${v1}, ${v2}, ${v3})"
+            case App4(_, v1, v2, v3, v4) => "f(${v1}, ${v2}, ${v3}, ${v4})"
+            case App5(_, v1, v2, v3, v4, v5) => "f(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
+        }
     }
 }

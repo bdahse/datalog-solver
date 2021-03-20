@@ -60,9 +60,31 @@ namespace Fixpoint {
 
     def lowerTerm(rowVars: Map[RowVar, RowVar], term: RamTerm[v]): RamTerm[v] = match term {
         case RamTerm.Lit(_) => term
-        case RamTerm.Attribute(rowVar, index) =>
-             RamTerm.Attribute(Map.getWithDefault(rowVar, rowVar, rowVars), index)
-        case RamTerm.App(f, terms) =>
-             RamTerm.App(f, Array.map(lowerTerm(rowVars), terms)) as & Pure
+        case RamTerm.Attribute(rowVar, index) => RamTerm.Attribute(Map.getWithDefault(rowVar, rowVar, rowVars), index)
+        case RamTerm.App1(f, v) =>
+            let t = lowerTerm(rowVars, v);
+            RamTerm.App1(f, t)
+        case RamTerm.App2(f, v1, v2) =>
+            let t1 = lowerTerm(rowVars, v1);
+            let t2 = lowerTerm(rowVars, v2);
+            RamTerm.App2(f, t1, t2)
+        case RamTerm.App3(f, v1, v2, v3) =>
+            let t1 = lowerTerm(rowVars, v1);
+            let t2 = lowerTerm(rowVars, v2);
+            let t3 = lowerTerm(rowVars, v3);
+            RamTerm.App3(f, t1, t2, t3)
+        case RamTerm.App4(f, v1, v2, v3, v4) =>
+            let t1 = lowerTerm(rowVars, v1);
+            let t2 = lowerTerm(rowVars, v2);
+            let t3 = lowerTerm(rowVars, v3);
+            let t4 = lowerTerm(rowVars, v4);
+            RamTerm.App4(f, t1, t2, t3, t4)
+        case RamTerm.App5(f, v1, v2, v3, v4, v5) =>
+            let t1 = lowerTerm(rowVars, v1);
+            let t2 = lowerTerm(rowVars, v2);
+            let t3 = lowerTerm(rowVars, v3);
+            let t4 = lowerTerm(rowVars, v4);
+            let t5 = lowerTerm(rowVars, v5);
+            RamTerm.App5(f, t1, t2, t3, t4, t5)
     }
 }

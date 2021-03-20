@@ -17,16 +17,22 @@ namespace Fixpoint/Ast {
     pub enum HeadTerm[v] {
         case Var(VarSym, SourceLocation)
         case Lit(v, SourceLocation)
-        case App(Array[v] -> v, Array[HeadTerm[v]], SourceLocation)
+        case App1(v -> v, VarSym, SourceLocation)
+        case App2(v -> v -> v, VarSym, VarSym, SourceLocation)
+        case App3(v -> v -> v -> v, VarSym, VarSym, VarSym, SourceLocation)
+        case App4(v -> v -> v -> v -> v, VarSym, VarSym, VarSym, VarSym, SourceLocation)
+        case App5(v -> v -> v -> v -> v -> v, VarSym, VarSym, VarSym, VarSym, VarSym, SourceLocation)
     }
 
     instance ToString[HeadTerm[v]] with [v : ToString] {
-        pub def toString(term: HeadTerm[v]): String =
-            use Fixpoint.commaSeparate;
-            match term {
-                case HeadTerm.Var(varSym, _) => "${varSym}"
-                case HeadTerm.Lit(v, _) => "${v}"
-                case HeadTerm.App(_, terms, _) => "f(${commaSeparate(terms)})"
-            }
+        pub def toString(term: HeadTerm[v]): String = match term {
+            case HeadTerm.Var(varSym, _) => "${varSym}"
+            case HeadTerm.Lit(v, _) => "${v}"
+            case HeadTerm.App1(_, v, _) => "f(${v})"
+            case HeadTerm.App2(_, v1, v2, _) => "f(${v1}, ${v2})"
+            case HeadTerm.App3(_, v1, v2, v3, _) => "f(${v1}, ${v2}, ${v3})"
+            case HeadTerm.App4(_, v1, v2, v3, v4, _) => "f(${v1}, ${v2}, ${v3}, ${v4})"
+            case HeadTerm.App5(_, v1, v2, v3, v4, v5, _) => "f(${v1}, ${v2}, ${v3}, ${v4}, ${v5})"
+        }
     }
 }

@@ -185,10 +185,8 @@ pub def test03(): Bool & Impure =
     /// Number(7).
     /// Sum(f(x, 0)) :- Number(x).
     /// Sum(f(x, y)) :- Number(x), Number(y).
-    let f = args -> match args {
-        case [x, y] => "${x} + ${y}"
-        case _ => "0"
-    };
+    let f1 = x -> "${x} + 0";
+    let f2 = x -> y -> "${x} + ${y}";
     let fact1 = Constraint(HeadAtom(PredSym("Number", Unknown),
                                     [HeadTerm.Lit("2", Unknown)], Unknown),
                             [], Unknown);
@@ -202,10 +200,7 @@ pub def test03(): Bool & Impure =
                                     [HeadTerm.Lit("7", Unknown)], Unknown),
                             [], Unknown);
     let rule1 = Constraint(HeadAtom(PredSym("Sum", Unknown),
-                                    [HeadTerm.App(f,
-                                                [HeadTerm.Var(VarSym("x", Unknown), Unknown),
-                                                HeadTerm.Lit("0", Unknown)],
-                                                Unknown)],
+                                    [HeadTerm.App1(f1, VarSym("x", Unknown), Unknown)],
                                     Unknown),
                             [BodyAtom(PredSym("Number", Unknown),
                                     Positive,
@@ -213,10 +208,7 @@ pub def test03(): Bool & Impure =
                                     Unknown)],
                             Unknown);
     let rule2 = Constraint(HeadAtom(PredSym("Sum", Unknown),
-                                    [HeadTerm.App(f,
-                                                [HeadTerm.Var(VarSym("x", Unknown), Unknown),
-                                                 HeadTerm.Var(VarSym("y", Unknown), Unknown)],
-                                                Unknown)],
+                                    [HeadTerm.App2(f2, VarSym("x", Unknown), VarSym("y", Unknown), Unknown)],
                                     Unknown),
                             [BodyAtom(PredSym("Number", Unknown),
                                     Positive,
