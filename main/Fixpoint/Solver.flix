@@ -82,7 +82,6 @@ namespace Fixpoint {
             let acc = MutList.new();
             Set.foreach(t -> MutList.push!(tupleToFact(k, t), acc), v);
             MutList.toArray(acc) |>
-            Array.reverse |> // TODO: remove after fixing MutList.toArray
             Array.append
         } as & Pure, [], db) as & Pure;
         Datalog(facts, []) as & Pure
