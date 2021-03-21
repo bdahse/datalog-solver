@@ -118,8 +118,7 @@ namespace Fixpoint {
                 })
             case RelOp.Query(RowVar.Index(i), relSym, query, where, body) =>
                 MutMap.getWithDefault(relSym, MutSet.empty(), db) |>
-                MutSet.query(evalQuery(env, 0, query)) |>
-                List.foreach(row -> {
+                MutSet.queryWith(evalQuery(env, 0, query), row -> {
                     env[i] = row;
                     if (List.forall(evalBoolExp(db, env) as BoolExp[v] -> Bool, where)) {
                         evalOp(db, env, body)
