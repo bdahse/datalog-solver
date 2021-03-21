@@ -18,7 +18,7 @@ use Fixpoint/Ast.{Datalog, Constraint, HeadTerm, BodyTerm};
 use Fixpoint/Ast.Datalog.Datalog;
 use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
-use Fixpoint/Ast.BodyPredicate.{BodyAtom, GuardAtom};
+use Fixpoint/Ast.BodyPredicate.{BodyAtom, Guard1};
 use Fixpoint/Ast.Polarity.{Positive, Negative};
 use Fixpoint/Ast.SourceLocation.Unknown;
 use Fixpoint/Ast.PredSym.PredSym;
@@ -185,10 +185,8 @@ pub def test03(): Bool & Impure =
     /// Number(7).
     /// Sum(f(x, 0)) :- Number(x).
     /// Sum(f(x, y)) :- Number(x), Number(y).
-    let f = args -> match args {
-        case [x, y] => "${x} + ${y}"
-        case _ => "0"
-    };
+    let f1 = x -> "${x} + 0";
+    let f2 = x -> y -> "${x} + ${y}";
     let fact1 = Constraint(HeadAtom(PredSym("Number", Unknown),
                                     [HeadTerm.Lit("2", Unknown)], Unknown),
                             [], Unknown);
@@ -202,10 +200,7 @@ pub def test03(): Bool & Impure =
                                     [HeadTerm.Lit("7", Unknown)], Unknown),
                             [], Unknown);
     let rule1 = Constraint(HeadAtom(PredSym("Sum", Unknown),
-                                    [HeadTerm.App(f,
-                                                [HeadTerm.Var(VarSym("x", Unknown), Unknown),
-                                                HeadTerm.Lit("0", Unknown)],
-                                                Unknown)],
+                                    [HeadTerm.App1(f1, VarSym("x", Unknown), Unknown)],
                                     Unknown),
                             [BodyAtom(PredSym("Number", Unknown),
                                     Positive,
@@ -213,10 +208,7 @@ pub def test03(): Bool & Impure =
                                     Unknown)],
                             Unknown);
     let rule2 = Constraint(HeadAtom(PredSym("Sum", Unknown),
-                                    [HeadTerm.App(f,
-                                                [HeadTerm.Var(VarSym("x", Unknown), Unknown),
-                                                 HeadTerm.Var(VarSym("y", Unknown), Unknown)],
-                                                Unknown)],
+                                    [HeadTerm.App2(f2, VarSym("x", Unknown), VarSym("y", Unknown), Unknown)],
                                     Unknown),
                             [BodyAtom(PredSym("Number", Unknown),
                                     Positive,
@@ -240,10 +232,7 @@ pub def test04(): Bool & Impure =
     /// Edge(D, 50. B).
     /// Path(x, y) :- Edge(x, speedLimit, y), if speedLimit >= 70.
     /// Path(x, z) :- Path(x, y), Edge(y, speedLimit, z), if speedLimit >= 70.
-    let f = args -> match args {
-        case [x] => x >= "070"
-        case _ => false
-    };
+    let f = x -> x >= "070";
     let fact1 = Constraint(HeadAtom(PredSym("Edge", Unknown),
                                     [HeadTerm.Lit("A", Unknown),
                                      HeadTerm.Lit("080", Unknown),
@@ -274,9 +263,7 @@ pub def test04(): Bool & Impure =
                                      BodyTerm.Var(VarSym("speedLimit", Unknown), Unknown),
                                      BodyTerm.Var(VarSym("y", Unknown), Unknown)],
                                     Unknown),
-                            GuardAtom(f,
-                                    [BodyTerm.Var(VarSym("speedLimit", Unknown), Unknown)],
-                                    Unknown)],
+                            Guard1(f, VarSym("speedLimit", Unknown), Unknown)],
                             Unknown);
     let rule2 = Constraint(HeadAtom(PredSym("Path", Unknown),
                                     [HeadTerm.Var(VarSym("x", Unknown), Unknown),
@@ -293,9 +280,7 @@ pub def test04(): Bool & Impure =
                                      BodyTerm.Var(VarSym("speedLimit", Unknown), Unknown),
                                      BodyTerm.Var(VarSym("z", Unknown), Unknown)],
                                     Unknown),
-                            GuardAtom(f,
-                                    [BodyTerm.Var(VarSym("speedLimit", Unknown), Unknown)],
-                                    Unknown)],
+                            Guard1(f, VarSym("speedLimit", Unknown), Unknown)],
                             Unknown);
     solve(Datalog([fact1, fact2, fact3, fact4], [rule1, rule2])) |>
     toString |>

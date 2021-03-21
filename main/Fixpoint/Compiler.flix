@@ -19,7 +19,7 @@ use Fixpoint/Ast.{Datalog, Constraint, BodyPredicate, BodyTerm, HeadTerm, Polari
 use Fixpoint/Ast.Datalog.Datalog;
 use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
-use Fixpoint/Ast.BodyPredicate.{BodyAtom, GuardAtom};
+use Fixpoint/Ast.BodyPredicate.{BodyAtom, Guard1, Guard2, Guard3, Guard4, Guard5};
 use Fixpoint/Ast.PredSym.PredSym;
 
 namespace Fixpoint {
@@ -118,20 +118,41 @@ namespace Fixpoint {
             List.fold(comment :: deltas :: Nil)
     }
 
-    def compileHeadTerm(env: Map[VarSym, RamTerm[v]], term: HeadTerm[v]): RamTerm[v] =
-        match term {
-            case HeadTerm.Var(var, _) => unwrap(Map.get(var, env))
-            case HeadTerm.Lit(v, _) => RamTerm.Lit(v)
-            case HeadTerm.App(f, terms, _) =>
-                let ramTerms = Array.map(compileHeadTerm(env), terms) as & Pure;
-                RamTerm.App(f, ramTerms)
-        }
+    def compileHeadTerm(env: Map[VarSym, RamTerm[v]], term: HeadTerm[v]): RamTerm[v] = match term {
+        case HeadTerm.Var(var, _) => unwrap(Map.get(var, env))
+        case HeadTerm.Lit(v, _) => RamTerm.Lit(v)
+        case HeadTerm.App1(f, v, _) =>
+            let t = unwrap(Map.get(v, env));
+            RamTerm.App1(f, t)
+        case HeadTerm.App2(f, v1, v2, _) =>
+            let t1 = unwrap(Map.get(v1, env));
+            let t2 = unwrap(Map.get(v2, env));
+            RamTerm.App2(f, t1, t2)
+        case HeadTerm.App3(f, v1, v2, v3, _) =>
+            let t1 = unwrap(Map.get(v1, env));
+            let t2 = unwrap(Map.get(v2, env));
+            let t3 = unwrap(Map.get(v3, env));
+            RamTerm.App3(f, t1, t2, t3)
+        case HeadTerm.App4(f, v1, v2, v3, v4, _) =>
+            let t1 = unwrap(Map.get(v1, env));
+            let t2 = unwrap(Map.get(v2, env));
+            let t3 = unwrap(Map.get(v3, env));
+            let t4 = unwrap(Map.get(v4, env));
+            RamTerm.App4(f, t1, t2, t3, t4)
+        case HeadTerm.App5(f, v1, v2, v3, v4, v5, _) =>
+            let t1 = unwrap(Map.get(v1, env));
+            let t2 = unwrap(Map.get(v2, env));
+            let t3 = unwrap(Map.get(v3, env));
+            let t4 = unwrap(Map.get(v4, env));
+            let t5 = unwrap(Map.get(v5, env));
+            RamTerm.App5(f, t1, t2, t3, t4, t5)
+    }
 
     /// Augment body atoms with row variables.
     def augmentBody(body: Array[BodyPredicate[v]]): Array[(BodyPredicate[v], RowVar)] =
         Array.mapWithIndex(atom -> i -> match atom {
-            case GuardAtom(_) => (atom, RowVar.Named("IfYouSeeThisYouFoundABug"))
-            case BodyAtom(predSym, _, _, _) => (atom, RowVar.Named("${predSym}$${i}"))
+            case BodyAtom(predSym, Polarity.Positive, _, _) => (atom, RowVar.Named("${predSym}$${i}"))
+            case _ => (atom, RowVar.Named("IfYouSeeThisYouFoundABug"))
         }, body) as & Pure
 
     /// Unifies each variable that occurs in a rule body with an attribute
@@ -167,9 +188,31 @@ namespace Fixpoint {
                 case BodyAtom(PredSym(pred, _), Polarity.Negative, terms, _) =>
                     let ramTerms = Array.mapWithIndex(compileBodyTerm, terms);
                     BoolExp.NotMemberOf(ramTerms, RelSym.Full(pred)) :: acc
-                case GuardAtom(f, terms, _) =>
-                    let ramTerms = Array.mapWithIndex(compileBodyTerm, terms);
-                    BoolExp.Guard(f, ramTerms) :: acc
+                case Guard1(f, v, _) =>
+                    let t = unwrap(Map.get(v, env));
+                    BoolExp.Guard1(f, t) :: acc
+                case Guard2(f, v1, v2, _) =>
+                    let t1 = unwrap(Map.get(v1, env));
+                    let t2 = unwrap(Map.get(v2, env));
+                    BoolExp.Guard2(f, t1, t2) :: acc
+                case Guard3(f, v1, v2, v3, _) =>
+                    let t1 = unwrap(Map.get(v1, env));
+                    let t2 = unwrap(Map.get(v2, env));
+                    let t3 = unwrap(Map.get(v3, env));
+                    BoolExp.Guard3(f, t1, t2, t3) :: acc
+                case Guard4(f, v1, v2, v3, v4, _) =>
+                    let t1 = unwrap(Map.get(v1, env));
+                    let t2 = unwrap(Map.get(v2, env));
+                    let t3 = unwrap(Map.get(v3, env));
+                    let t4 = unwrap(Map.get(v4, env));
+                    BoolExp.Guard4(f, t1, t2, t3, t4) :: acc
+                case Guard5(f, v1, v2, v3, v4, v5, _) =>
+                    let t1 = unwrap(Map.get(v1, env));
+                    let t2 = unwrap(Map.get(v2, env));
+                    let t3 = unwrap(Map.get(v3, env));
+                    let t4 = unwrap(Map.get(v4, env));
+                    let t5 = unwrap(Map.get(v5, env));
+                    BoolExp.Guard5(f, t1, t2, t3, t4, t5) :: acc
             }, Nil, body) as & Pure
 
     /// Restrict a constraint system to those constraints whose head predicate belongs to the given domain.
