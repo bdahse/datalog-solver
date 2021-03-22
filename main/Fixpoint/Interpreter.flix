@@ -24,17 +24,14 @@ instance Order[Tuple[v]] with [v : Order] {
 }
 
 def compareHelper[v : Order](a: Array[v], b: Array[v], i: Int32): Comparison & Impure =
-    let alen = Array.length(a);
-    let blen = Array.length(b);
-    if (i >= alen and i >= blen)
+    if (i < Array.length(a)) {
+        let cmp = a[i] <=> b[i];
+        if (cmp == EqualTo)
+            compareHelper(a, b, i + 1)
+        else
+            cmp
+    } else {
         EqualTo
-    else if (i >= alen)
-        LessThan
-    else if (i >= blen)
-        GreaterThan
-    else match a[i] <=> b[i] {
-        case EqualTo => compareHelper(a, b, i+1)
-        case cmp => cmp
     }
 
 namespace Fixpoint {
