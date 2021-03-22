@@ -19,6 +19,7 @@ namespace Fixpoint/Ram {
         case Empty(RelSym)
         case NotMemberOf(Array[RamTerm[v]], RelSym)
         case Eq(RamTerm[v], RamTerm[v])
+        case Guard0(Unit -> Bool)
         case Guard1(v -> Bool, RamTerm[v])
         case Guard2(v -> v -> Bool, RamTerm[v], RamTerm[v])
         case Guard3(v -> v -> v -> Bool, RamTerm[v], RamTerm[v], RamTerm[v])
@@ -33,6 +34,7 @@ namespace Fixpoint/Ram {
                 case Empty(relSym) => "${relSym} = ∅"
                 case NotMemberOf(terms, relSym) => "(${commaSeparate(terms)}) ∉ ${relSym}"
                 case Eq(lhs, rhs) => "${lhs} = ${rhs}"
+                case Guard0(_) => "if f()"
                 case Guard1(_, v) => "if f(${v})"
                 case Guard2(_, v1, v2) => "if f(${v1}, ${v2})"
                 case Guard3(_, v1, v2, v3) => "if f(${v1}, ${v2}, ${v3})"

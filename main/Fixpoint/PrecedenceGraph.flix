@@ -45,29 +45,6 @@ namespace Fixpoint/Ast {
     }
 
     instance Order[PrecedenceEdge[v]] {
-
-        pub def less(a: PrecedenceEdge[v], b: PrecedenceEdge[v]): Bool = match a <=> b {
-            case LessThan => true
-            case _ => false
-        }
-
-        pub def lessEqual(a: PrecedenceEdge[v], b: PrecedenceEdge[v]): Bool = match a <=> b {
-            case LessThan => true
-            case EqualTo => true
-            case _ => false
-        }
-
-        pub def greater(a: PrecedenceEdge[v], b: PrecedenceEdge[v]): Bool = match a <=> b {
-            case GreaterThan => true
-            case _ => false
-        }
-
-        pub def greaterEqual(a: PrecedenceEdge[v], b: PrecedenceEdge[v]): Bool = match a <=> b {
-            case GreaterThan => true
-            case EqualTo => true
-            case _ => false
-        }
-
         pub def compare(a: PrecedenceEdge[v], b: PrecedenceEdge[v]): Comparison = match (a,b) {
             case (PositiveEdge(BodyAtom(s1, _, _, _), HeadAtom(s2, _, _)),
                     PositiveEdge(BodyAtom(s3, _, _, _), HeadAtom(s4, _, _))) =>
@@ -87,6 +64,5 @@ namespace Fixpoint/Ast {
             case (PositiveEdge(_, _), NegativeEdge(_, _)) => GreaterThan
             case _ => ?bug
         }
-
     }
 }

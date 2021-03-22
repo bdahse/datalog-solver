@@ -20,33 +20,10 @@ use Fixpoint/Ast.PredSym.PredSym;
 use Fixpoint.Tuple;
 
 instance Order[Tuple[v]] with [v : Order] {
-    pub def less(a: Tuple[v], b: Tuple[v]): Bool = match a <=> b {
-        case LessThan => true
-        case _ => false
-    }
-
-    pub def lessEqual(a: Tuple[v], b: Tuple[v]): Bool = match a <=> b {
-        case LessThan => true
-        case EqualTo => true
-        case _ => false
-    }
-
-    pub def greater(a: Tuple[v], b: Tuple[v]): Bool = match a <=> b {
-        case GreaterThan => true
-        case _ => false
-    }
-
-    pub def greaterEqual(a: Tuple[v], b: Tuple[v]): Bool = match a <=> b {
-        case GreaterThan => true
-        case EqualTo => true
-        case _ => false
-    }
-
     pub def compare(a: Tuple[v], b: Tuple[v]): Comparison = compareHelper(a, b, 0) as & Pure
 }
 
-// Unused def. unless this is public. Bug?
-pub def compareHelper[v : Order](a: Array[v], b: Array[v], i: Int32): Comparison & Impure =
+def compareHelper[v : Order](a: Array[v], b: Array[v], i: Int32): Comparison & Impure =
     let alen = Array.length(a);
     let blen = Array.length(b);
     if (i >= alen and i >= blen)
@@ -59,7 +36,6 @@ pub def compareHelper[v : Order](a: Array[v], b: Array[v], i: Int32): Comparison
         case EqualTo => compareHelper(a, b, i+1)
         case cmp => cmp
     }
-
 
 namespace Fixpoint {
     pub type alias Tuple[v] = Array[v]
@@ -153,6 +129,8 @@ namespace Fixpoint {
             }
             case BoolExp.Eq(lhs, rhs) =>
                 evalTerm(env, lhs) == evalTerm(env, rhs)
+            case BoolExp.Guard0(f) =>
+                f()
             case BoolExp.Guard1(f, t) =>
                 let v = evalTerm(env, t);
                 f(v)
@@ -183,6 +161,8 @@ namespace Fixpoint {
     def evalTerm(env: SearchEnv[v], term: RamTerm[v]): v = match term {
         case RamTerm.Lit(v) => v
         case RamTerm.Attribute(RowVar.Index(i), index) => env[i][index] as & Pure
+        case RamTerm.App0(f) =>
+            f()
         case RamTerm.App1(f, t) =>
             let v = evalTerm(env, t);
             f(v)

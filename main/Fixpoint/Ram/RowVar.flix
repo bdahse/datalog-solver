@@ -32,33 +32,9 @@ namespace Fixpoint/Ram {
             case EqualTo => true
             case _ => false
         }
-
-        pub def neq(x: RowVar, y: RowVar): Bool = not (x == y)
     }
 
     instance Order[RowVar] {
-        pub def less(a: RowVar, b: RowVar): Bool = match a <=> b {
-            case LessThan => true
-            case _ => false
-        }
-
-        pub def lessEqual(a: RowVar, b: RowVar): Bool = match a <=> b {
-            case LessThan => true
-            case EqualTo => true
-            case _ => false
-        }
-
-        pub def greater(a: RowVar, b: RowVar): Bool = match a <=> b {
-            case GreaterThan => true
-            case _ => false
-        }
-
-        pub def greaterEqual(a: RowVar, b: RowVar): Bool = match a <=> b {
-            case GreaterThan => true
-            case EqualTo => true
-            case _ => false
-        }
-
         pub def compare(a: RowVar, b: RowVar): Comparison = match (a, b) {
             case (Named(s1), Named(s2)) => s1 <=> s2
             case (Index(i1), Index(i2)) => i1 <=> i2

@@ -77,12 +77,10 @@ namespace Fixpoint {
                 Map.insertWith(Set.union, pred, Set#{factToTuple(c)})
         }, Map#{}, facts) as & Pure
 
-    def toAst(db: Map[String, Set[Array[v]]]): Datalog[v] =
-        let facts = Map.foldRightWithKey(k -> v -> {
-            let acc = MutList.new();
-            Set.foreach(t -> MutList.push!(tupleToFact(k, t), acc), v);
-            MutList.toArray(acc) |>
-            Array.append
-        } as & Pure, [], db) as & Pure;
-        Datalog(facts, []) as & Pure
+    def toAst(db: Map[String, Set[Array[v]]]): Datalog[v] & Impure =
+        let facts = MutList.new();
+        Map.foreach(k -> v -> Set.foreach(t -> {
+            MutList.push!(tupleToFact(k, t), facts)
+        }, v), db);
+        Datalog(MutList.toArray(facts), [])
 }

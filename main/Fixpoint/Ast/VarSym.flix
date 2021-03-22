@@ -25,28 +25,6 @@ namespace Fixpoint/Ast {
     }
 
     instance Order[VarSym] {
-        pub def less(a: VarSym, b: VarSym): Bool = match a <=> b {
-            case LessThan => true
-            case _ => false
-        }
-
-        pub def lessEqual(a: VarSym, b: VarSym): Bool = match a <=> b {
-            case LessThan => true
-            case EqualTo => true
-            case _ => false
-        }
-
-        pub def greater(a: VarSym, b: VarSym): Bool = match a <=> b {
-            case GreaterThan => true
-            case _ => false
-        }
-
-        pub def greaterEqual(a: VarSym, b: VarSym): Bool = match a <=> b {
-            case GreaterThan => true
-            case EqualTo => true
-            case _ => false
-        }
-
         pub def compare(a: VarSym, b: VarSym): Comparison = match (a,b) {
             case (VarSym(s1, _), VarSym(s2, _)) => s1 <=> s2
         }

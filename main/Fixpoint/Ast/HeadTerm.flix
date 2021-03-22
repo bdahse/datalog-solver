@@ -17,6 +17,7 @@ namespace Fixpoint/Ast {
     pub enum HeadTerm[v] {
         case Var(VarSym, SourceLocation)
         case Lit(v, SourceLocation)
+        case App0(Unit -> v, SourceLocation)
         case App1(v -> v, VarSym, SourceLocation)
         case App2(v -> v -> v, VarSym, VarSym, SourceLocation)
         case App3(v -> v -> v -> v, VarSym, VarSym, VarSym, SourceLocation)
@@ -28,6 +29,7 @@ namespace Fixpoint/Ast {
         pub def toString(term: HeadTerm[v]): String = match term {
             case HeadTerm.Var(varSym, _) => "${varSym}"
             case HeadTerm.Lit(v, _) => "${v}"
+            case HeadTerm.App0(_) => "f()"
             case HeadTerm.App1(_, v, _) => "f(${v})"
             case HeadTerm.App2(_, v1, v2, _) => "f(${v1}, ${v2})"
             case HeadTerm.App3(_, v1, v2, v3, _) => "f(${v1}, ${v2}, ${v3})"

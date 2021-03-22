@@ -19,7 +19,7 @@ use Fixpoint/Ast.{Datalog, Constraint, BodyPredicate, BodyTerm, HeadTerm, Polari
 use Fixpoint/Ast.Datalog.Datalog;
 use Fixpoint/Ast.Constraint.Constraint;
 use Fixpoint/Ast.HeadPredicate.HeadAtom;
-use Fixpoint/Ast.BodyPredicate.{BodyAtom, Guard1, Guard2, Guard3, Guard4, Guard5};
+use Fixpoint/Ast.BodyPredicate.{BodyAtom, Guard0, Guard1, Guard2, Guard3, Guard4, Guard5};
 use Fixpoint/Ast.PredSym.PredSym;
 
 namespace Fixpoint {
@@ -121,6 +121,7 @@ namespace Fixpoint {
     def compileHeadTerm(env: Map[VarSym, RamTerm[v]], term: HeadTerm[v]): RamTerm[v] = match term {
         case HeadTerm.Var(var, _) => unwrap(Map.get(var, env))
         case HeadTerm.Lit(v, _) => RamTerm.Lit(v)
+        case HeadTerm.App0(f, _) => RamTerm.App0(f)
         case HeadTerm.App1(f, v, _) =>
             let t = unwrap(Map.get(v, env));
             RamTerm.App1(f, t)
@@ -188,6 +189,8 @@ namespace Fixpoint {
                 case BodyAtom(PredSym(pred, _), Polarity.Negative, terms, _) =>
                     let ramTerms = Array.mapWithIndex(compileBodyTerm, terms);
                     BoolExp.NotMemberOf(ramTerms, RelSym.Full(pred)) :: acc
+                case Guard0(f, _) =>
+                    BoolExp.Guard0(f) :: acc
                 case Guard1(f, v, _) =>
                     let t = unwrap(Map.get(v, env));
                     BoolExp.Guard1(f, t) :: acc

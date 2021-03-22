@@ -32,28 +32,6 @@ namespace Fixpoint/Ram {
     }
 
     instance Order[RelSym] {
-        pub def less(a: RelSym, b: RelSym): Bool = match a <=> b {
-            case LessThan => true
-            case _ => false
-        }
-
-        pub def lessEqual(a: RelSym, b: RelSym): Bool = match a <=> b {
-            case LessThan => true
-            case EqualTo => true
-            case _ => false
-        }
-
-        pub def greater(a: RelSym, b: RelSym): Bool = match a <=> b {
-            case GreaterThan => true
-            case _ => false
-        }
-
-        pub def greaterEqual(a: RelSym, b: RelSym): Bool = match a <=> b {
-            case GreaterThan => true
-            case EqualTo => true
-            case _ => false
-        }
-
         pub def compare(a: RelSym, b: RelSym): Comparison = match (a, b) {
             case (Full(s1), Full(s2))   => s1 <=> s2
             case (Delta(s1), Delta(s2)) => s1 <=> s2

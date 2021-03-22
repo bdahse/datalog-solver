@@ -18,6 +18,7 @@ namespace Fixpoint/Ram {
     pub enum RamTerm[v] {
         case Lit(v)
         case Attribute(RowVar, Int32)
+        case App0(Unit -> v)
         case App1(v -> v, RamTerm[v])
         case App2(v -> v -> v, RamTerm[v], RamTerm[v])
         case App3(v -> v -> v -> v, RamTerm[v], RamTerm[v], RamTerm[v])
@@ -29,6 +30,7 @@ namespace Fixpoint/Ram {
         pub def toString(term: RamTerm[v]): String = match term {
             case Lit(v) => ToString.toString(v)
             case Attribute(var, index) => "${var}[${index}]"
+            case App0(_) => "f()"
             case App1(_, v) => "f(${v})"
             case App2(_, v1, v2) => "f(${v1}, ${v2})"
             case App3(_, v1, v2, v3) => "f(${v1}, ${v2}, ${v3})"
